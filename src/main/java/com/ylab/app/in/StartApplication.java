@@ -1,11 +1,21 @@
 package com.ylab.app.in;
 
-import com.ylab.app.model.*;
+import com.ylab.app.dbService.migration.LiquibaseMigration;
+import com.ylab.app.model.Audit;
+import com.ylab.app.model.MeterReadingDetails;
+import com.ylab.app.model.User;
+import com.ylab.app.model.UserRole;
+import com.ylab.app.service.MeterService;
+import com.ylab.app.service.UserService;
+import com.ylab.app.service.WebService;
+import com.ylab.app.service.impl.MeterServiceImpl;
+import com.ylab.app.service.impl.UserServiceImpl;
+import com.ylab.app.service.impl.WebServiceImpl;
+import com.ylab.app.service.Audition;
 
-import com.ylab.app.service.impl.*;
-import com.ylab.app.util.*;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 /**
  * StartApplication class to initialize and run the meter reading service application.
@@ -14,19 +24,27 @@ import java.util.*;
  * @since 24.01.2024
  */
 public class StartApplication {
+    private LiquibaseMigration liquibaseMigration = new LiquibaseMigration();
+    private UserService userService = new UserServiceImpl();
+    private MeterService meterService = new MeterServiceImpl(userService);
+    private WebService webService = new WebServiceImpl(userService, meterService);
+    private Audition audition = new Audition();
+    private Scanner sc = new Scanner(System.in);
+    private User user;
+    private boolean running = true;
+    private boolean loggedIn = true;
+
     /**
      * The entry point of application.
      *
      * @param args the input arguments
      */
     public static void main(String[] args) {
-        UserServiceImpl userService = new UserServiceImpl();
-        MeterServiceImpl meterService = new MeterServiceImpl(userService);
-        WebServiceImpl webService = new WebServiceImpl(userService, meterService);
-        Audition audition = new Audition();
-        Scanner sc = new Scanner(System.in);
-        User user = null;
-        boolean running = true;
+        new StartApplication().start();
+    }
+
+    private void start() {
+        liquibaseMigration.performLiquibaseMigration();
         System.out.println("Welcome to the meter reading service!");
         while (running) {
             System.out.println("Main menu:");
@@ -34,90 +52,132 @@ public class StartApplication {
             System.out.println("2. Login");
             System.out.println("3. Exit");
             int choice = sc.nextInt();
-            switch (choice) {
-                case 1:
-                    System.out.println("Enter name, password and role for registration:");
-                    String name = sc.next();
-                    String password = sc.next();
-                    String role = sc.next();
-                    webService.handleRegisterRequest(name, password, role);
-                    break;
-                case 2:
-                    System.out.println("Enter name and password for login:");
-                    name = sc.next();
-                    password = sc.next();
-                    user = webService.handleLoginRequest(name, password);
-                    audition.auditAction(user, "Login");
-                    if (user != null) {
-                        boolean loggedIn = true;
-                        while (loggedIn) {
-                            System.out.println("User menu:");
-                            System.out.println("1. Submit reading");
-                            System.out.println("2. View current readings");
-                            System.out.println("3. View readings by month");
-                            System.out.println("4. View readings history");
-                            System.out.println("5. Logout");
-                            if (user.getRole().equals("admin")) {
-                                System.out.println("6. View all readings");
-                            }
-                            choice = sc.nextInt();
-                            switch (choice) {
-                                case 1:
-                                    System.out.println("Enter the number of meter types and reading values for current month:");
-                                    int n = sc.nextInt();
-                                    String s = sc.next();
-                                    Map<String, Double> readings = new HashMap<>();
-                                    for (int i = 0; i < n; i++) {
-                                        String type = sc.next();
-                                        double value = sc.nextDouble();
-                                        readings.put(type, value);
-                                    }
-                                    for (Map.Entry<String, Double> entry : readings.entrySet()) {
-                                        webService.handleSubmitReadingRequest(user, s, entry.getKey(), entry.getValue());
-                                    }
-                                    audition.auditAction(user, "Submit Reading");
-                                    break;
-                                case 2:
-                                    webService.handleGetCurrentReadingsRequest(user);
-                                    audition.auditAction(user, "View Current Readings");
-                                    break;
-                                case 3:
-                                    System.out.println("Enter month number for viewing readings by month:");
-                                    int month = sc.nextInt();
-                                    webService.handleGetReadingsByMonthRequest(user, month);
-                                    audition.auditAction(user, "View Readings by Month");
-                                    break;
-                                case 4:
-                                    webService.handleGetReadingsHistoryRequest(user);
-                                    audition.auditAction(user, "View Readings History");
-                                    break;
-                                case 5:
-                                    System.out.println("User logged out successfully");
-                                    loggedIn = false;
-                                    audition.auditAction(user, "Logout");
-                                    break;
-                                case 6:
-                                    if (user.getRole().equals("admin")) {
-                                        webService.handleGetAllReadingsRequest(user);
-                                        break;
-                                    }
-                                default:
-                                    System.out.println("Invalid choice");
-                                    break;
-                            }
-                        }
-                    }
-                    break;
-                case 3:
-                    System.out.println("Exiting the application");
-                    running = false;
-                    audition.auditAction(user, "Session End");
-                    break;
-                default:
-                    System.out.println("Invalid  choice");
-                    break;
-            }
+            mainMenu(choice);
         }
-        System.out.println(audition.getAuditLogs());
+    }
+
+    private void mainMenu(int choice) {
+        switch (choice) {
+            case 1:
+                registration();
+                break;
+            case 2:
+                login();
+                if (user != null) {
+                    userMenu(loggedIn);
+                }
+            case 3:
+                System.out.println("Exiting the application");
+                running = false;
+                audition.auditAction(user, Audit.SESSION_END);
+                break;
+            default:
+                System.out.println("Invalid  choice");
+                break;
+        }
+    }
+
+    private void userMenu(boolean loggedId) {
+        while (loggedId) {
+            System.out.println("User menu:");
+            System.out.println("1. Submit reading");
+            System.out.println("2. View current readings");
+            System.out.println("3. View readings by month");
+            System.out.println("4. View readings history");
+            System.out.println("5. Logout");
+            if (user.getRole().equals(UserRole.ADMIN)) {
+                System.out.println("6. View all readings");
+            }
+            int choice = sc.nextInt();
+            meterReadingMenu(choice);
+        }
+    }
+
+    private void meterReadingMenu(int choice) {
+        switch (choice) {
+            case 1:
+                submitReading();
+                break;
+            case 2:
+                getCurrentReading();
+                break;
+            case 3:
+                getMonthReading();
+                break;
+            case 4:
+                historyReading();
+                break;
+            case 5:
+                logout();
+                break;
+            case 6:
+                if (user.getRole().equals(UserRole.ADMIN)) {
+                    webService.handleGetAllReadingsRequest(user);
+                    break;
+                }
+            default:
+                System.out.println("Invalid choice");
+                break;
+        }
+    }
+
+    private void registration() {
+        System.out.println("Enter name, password and role for registration:");
+        String name = sc.next();
+        String password = sc.next();
+        webService.handleRegisterRequest(name, password, UserRole.USER);
+        return;
+    }
+
+    private void login() {
+        System.out.println("Enter name and password for login:");
+        String name = sc.next();
+        String password = sc.next();
+        user = webService.handleLoginRequest(name, password);
+        audition.auditAction(user, Audit.LOGIN);
+    }
+
+    private void submitReading() {
+        System.out.println("Enter the number of meter types and reading values for current month:");
+        int n = sc.nextInt();
+        String numberMeter = sc.next();
+        List<MeterReadingDetails> readings = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            String type = sc.next();
+            double value = sc.nextDouble();
+            readings.add(new MeterReadingDetails(type, value));
+        }
+
+        webService.handleSubmitReadingRequest(user, numberMeter, readings);
+        audition.auditAction(user, Audit.SUBMIT_READING);
+        return;
+    }
+
+    private void getCurrentReading() {
+        webService.handleGetCurrentReadingsRequest(user);
+        audition.auditAction(user, Audit.VIEW_CURRENT_READINGS);
+        return;
+    }
+
+    private void getMonthReading() {
+        System.out.println("Enter month number for viewing readings by month:");
+        int month = sc.nextInt();
+        webService.handleGetReadingsByMonthRequest(user, month);
+        audition.auditAction(user, Audit.VIEW_READINGS_BY_MONTH);
+        return;
+    }
+
+    private void historyReading() {
+        webService.handleGetReadingsHistoryRequest(user);
+        audition.auditAction(user, Audit.VIEW_READING_HISTORY);
+        return;
+    }
+
+    private void logout() {
+        System.out.println("User logged out successfully");
+        loggedIn = false;
+        audition.auditAction(user, Audit.LOGOUT);
+        return;
     }
 }
+    

@@ -1,9 +1,12 @@
 package com.ylab.app.service.impl;
 
 import com.ylab.app.model.*;
-import com.ylab.app.service.*;
+import com.ylab.app.service.MeterService;
+import com.ylab.app.service.UserService;
+import com.ylab.app.service.WebService;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * WebServiceImpl class for handling user requests.
@@ -12,8 +15,8 @@ import java.util.*;
  * @since 24.01.2024
  */
 public class WebServiceImpl implements WebService {
-    private UserServiceImpl userService;
-    private MeterServiceImpl meterService;
+    private UserService userService;
+    private MeterService meterService;
 
     /**
      * Instantiates a new Web service.
@@ -21,7 +24,7 @@ public class WebServiceImpl implements WebService {
      * @param userService  the user service to be used
      * @param meterService the meter service to be used
      */
-    public WebServiceImpl(UserServiceImpl userService, MeterServiceImpl meterService) {
+    public WebServiceImpl(UserService userService, MeterService meterService) {
         this.userService = userService;
         this.meterService = meterService;
     }
@@ -33,7 +36,7 @@ public class WebServiceImpl implements WebService {
      * @param password the password for the user
      * @param role     the role of the user
      */
-    public void handleRegisterRequest(String name, String password, String role) {
+    public void handleRegisterRequest(String name, String password, UserRole role) {
         try {
             userService.registerUser(name, password, role);
             System.out.println("User registered successfully");
@@ -82,17 +85,24 @@ public class WebServiceImpl implements WebService {
      *
      * @param user        the user submitting the reading
      * @param numberMeter the meter number for which the reading is being submitted
-     * @param type        the type of the reading
-     * @param value       the value of the reading
+     * @param readings    list the values of the reading
+     *
      */
-    public void handleSubmitReadingRequest(User user, String numberMeter, String type, double value) {
+    public void handleSubmitReadingRequest(User user, String numberMeter, List<MeterReadingDetails> readings) {
         try {
-            meterService.submitReading(user, numberMeter, type, value);
+            MeterReading meterReading = new MeterReading(numberMeter, LocalDateTime.now(), user);
+            meterReading.setUser(user);
+
+            for (MeterReadingDetails reading : readings) {
+                meterReading.addReadingDetails(reading.getType(), reading.getValue());
+            }
+            meterService.submitReading(user, numberMeter, readings);
             System.out.println("Reading submitted successfully");
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
+
 
     /**
      * Handles request to fetch readings for a user and a specified month.
@@ -136,7 +146,7 @@ public class WebServiceImpl implements WebService {
      */
     public void handleGetAllReadingsRequest(User adminUser) {
         try {
-            if (!userService.checkRole(adminUser)) {
+            if (!userService.hasRoleAdmin(adminUser)) {
                 System.out.println("Error: User does not have the necessary permissions to access all readings");
                 return;
             }

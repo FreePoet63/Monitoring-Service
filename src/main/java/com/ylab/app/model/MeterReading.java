@@ -1,7 +1,10 @@
 package com.ylab.app.model;
 
-import java.time.*;
-import java.util.*;
+import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a meter reading.
@@ -10,11 +13,11 @@ import java.util.*;
  * @since 24.01.2024
  */
 public class MeterReading {
+    private Long id;
     private String numberMeter;
-    private static Map<String, List<Double>> globalMap = new HashMap<>();
-    private Map<String, List<Double>> map;
     private LocalDateTime date;
-    private String user;
+    private User user;
+    private List<MeterReadingDetails> detailsList;
 
     /**
      * Instantiates a new Meter reading.
@@ -23,42 +26,60 @@ public class MeterReading {
      * @param date        the date
      * @param user        the user
      */
-    public MeterReading(String numberMeter, LocalDateTime date, String user) {
+    public MeterReading(String numberMeter, LocalDateTime date, User user) {
         this.numberMeter = numberMeter;
         this.date = date;
-        this.map = new HashMap<>();
         this.user = user;
+        this.detailsList = new ArrayList<>();
+    }
+
+    /**
+     * Gets id of the meter reading.
+     *
+     * @return the id of the meter reading
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * Sets id of the meter reading.
+     *
+     * @param id the id of the meter reading to be set
+     */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     /**
      * Gets the user associated with the meter reading.
      *
-     * @return the user
+     * @return the user of the meter reading
      */
-    public String getUser() {
+    public User getUser() {
         return user;
     }
 
     /**
      * Sets the user associated with the meter reading.
      *
-     * @param user the user to be set
+     * @param user the user of the meter reading to be set
      */
-    public void setUser(String user) {
+    public void setUser(User user) {
         this.user = user;
     }
 
     /**
-     * Gets number meter.
+     * Gets number meter of the meter reading.
      *
-     * @return the number meter
+     * @return the number meter of the meter reading
      */
     public String getNumberMeter() {
         return numberMeter;
     }
 
     /**
-     * Sets number meter.
+     * Sets number meter of the meter reading.
      *
      * @param numberMeter the meter number to be set
      */
@@ -67,21 +88,21 @@ public class MeterReading {
     }
 
     /**
-     * Gets the map of readings.
+     * Gets details list of the meter reading.
      *
-     * @return the map of readings
+     * @return the details list of the meter reading
      */
-    public Map<String, List<Double>> getMap() {
-        return map;
+    public List<MeterReadingDetails> getDetailsList() {
+        return detailsList;
     }
 
     /**
-     * Sets the map of readings.
+     * Sets details list of the meter reading.
      *
-     * @param map the map of readings to be set
+     * @param detailsList the details list
      */
-    public void setMap(Map<String, List<Double>> map) {
-        this.map = map;
+    public void setDetailsList(List<MeterReadingDetails> detailsList) {
+        this.detailsList = detailsList;
     }
 
     /**
@@ -103,52 +124,14 @@ public class MeterReading {
     }
 
     /**
-     * Gets the global map of readings across all meter readings.
+     * Add details of the meter reading with the specified type and value.
      *
-     * @return the global map of readings
+     * @param type  the type of the reading
+     * @param value the value of the reading
      */
-    public static Map<String, List<Double>> getGlobalMap() {
-        return globalMap;
-    }
-
-    /**
-     * Sets the global map of readings.
-     *
-     * @param globalMap the global map of readings to be set
-     */
-    public static void setGlobalMap(Map<String, List<Double>> globalMap) {
-        MeterReading.globalMap = globalMap;
-    }
-
-    /**
-     * Adds a reading for a specific type to the meter reading.
-     *
-     * @param type    the type of reading
-     * @param reading the reading value
-     */
-    public void addReading(String type, double reading) {
-        map.computeIfAbsent(type, k -> new ArrayList<>()).add(reading);
-        globalMap.computeIfAbsent(type, k -> new ArrayList<>()).add(reading);
-    }
-
-    /**
-     * Gets the total reading for a specific type.
-     *
-     * @param type the type of reading
-     * @return the total reading for the specified type
-     */
-    public double getTotalReadingByType(String type) {
-        return map.getOrDefault(type, new ArrayList<>()).stream().mapToDouble(Double::doubleValue).sum();
-    }
-
-    /**
-     * Gets the global total reading for a specific type across all meter readings.
-     *
-     * @param type the type of reading
-     * @return the global total reading for the specified type
-     */
-    public static double getGlobalTotalReadingByType(String type) {
-        return globalMap.getOrDefault(type, new ArrayList<>()).stream().mapToDouble(Double::doubleValue).sum();
+    public void addReadingDetails(String type, Double value) {
+        MeterReadingDetails details = new MeterReadingDetails(this.id, type, value);
+        detailsList.add(details);
     }
 
     /**
@@ -156,14 +139,15 @@ public class MeterReading {
      *
      * @return a string with the meter reading details
      */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Meter reading №").append(numberMeter).append("\n");
         sb.append("Date: ").append(date).append("\n");
-        for (Map.Entry<String, List<Double>> entry : map.entrySet()) {
-            String type = entry.getKey();
-            double totalByType = getTotalReadingByType(type);
-            double globalTotalByType = getGlobalTotalReadingByType(type);
+        for (MeterReadingDetails details : detailsList) {
+            String type = details.getType();
+            double totalByType = details.getValue();
+            double globalTotalByType = new MeterReadingDaoImpl().findToSumReadingForType(type, user);
             sb.append(type).append(": ").append(totalByType)
                     .append(" (Total: ").append(globalTotalByType).append(")\n");
         }

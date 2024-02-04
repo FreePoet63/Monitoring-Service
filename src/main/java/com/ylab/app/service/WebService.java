@@ -2,6 +2,8 @@ package com.ylab.app.service;
 
 import com.ylab.app.model.*;
 
+import java.util.List;
+
 /**
  * WebService interface for handling user requests.
  *
@@ -16,7 +18,7 @@ public interface WebService {
      * @param password the password for the user
      * @param role     the role of the user
      */
-    public void handleRegisterRequest(String name, String password, String role);
+    public void handleRegisterRequest(String name, String password, UserRole role);
 
     /**
      * Handles login request for a user.
@@ -39,10 +41,9 @@ public interface WebService {
      *
      * @param user        the user submitting the reading
      * @param numberMeter the meter number for which the reading is being submitted
-     * @param type        the type of the reading
-     * @param value       the value of the reading
+     * @param readingDetails        the type of the reading
      */
-    public void handleSubmitReadingRequest(User user, String numberMeter, String type, double value);
+    public void handleSubmitReadingRequest(User user, String numberMeter, List<MeterReadingDetails> readingDetails);
 
     /**
      * Handles request to fetch readings for a user and a specified month.
