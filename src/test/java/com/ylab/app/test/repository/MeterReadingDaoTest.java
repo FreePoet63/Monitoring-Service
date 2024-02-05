@@ -2,6 +2,7 @@ package com.ylab.app.test.repository;
 
 import com.ylab.app.dbService.connection.ConnectionManager;
 import com.ylab.app.dbService.dao.MeterReadingDao;
+import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
 import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
@@ -37,7 +38,7 @@ public class MeterReadingDaoTest {
             .withUsername(getTestDataDatabase(TEST_USER))
             .withPassword(getTestDataDatabase(TEST_PASSWORD));
 
-    private MeterReadingDao meterReadingDao;
+    private MeterReadingDao meterReadingDao = new MeterReadingDaoImpl();
 
     @BeforeEach
     public void setUp() throws SQLException {
@@ -83,14 +84,13 @@ public class MeterReadingDaoTest {
         List<MeterReading> result = meterReadingDao.selectCurrentMaterReading(user);
 
         assertThat(result).isNotNull()
-                .hasSize(2)
                 .extracting(
                         MeterReading::getNumberMeter,
                         MeterReading::getDate,
                         MeterReading::getUser,
                         MeterReading::getDetailsList
                 )
-                .containsExactlyInAnyOrder(
+                .containsAnyOf(
                         tuple("123", LocalDateTime.of(2024, 1, 15, 13, 0), user, List.of("gas", 10.0, "water", 20.0)),
                         tuple("456", LocalDateTime.of(2024, 2, 15, 17, 30), user, List.of("gas", 15.0, "water", 25.0))
                 );

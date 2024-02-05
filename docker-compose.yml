@@ -2,7 +2,7 @@ version: '3'
 services:
   postgres:
     image: postgres:latest
-    container_name: my_postgres_container
+    container_name: my_postgres_ylab_container
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: ylab

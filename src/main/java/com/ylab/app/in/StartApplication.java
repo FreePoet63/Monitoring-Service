@@ -54,6 +54,7 @@ public class StartApplication {
             int choice = sc.nextInt();
             mainMenu(choice);
         }
+        System.out.println(audition.getAuditLogs());
     }
 
     private void mainMenu(int choice) {
@@ -64,12 +65,12 @@ public class StartApplication {
             case 2:
                 login();
                 if (user != null) {
-                    userMenu(loggedIn);
+                    userMenu();
                 }
+                break;
             case 3:
                 System.out.println("Exiting the application");
                 running = false;
-                audition.auditAction(user, Audit.SESSION_END);
                 break;
             default:
                 System.out.println("Invalid  choice");
@@ -77,8 +78,8 @@ public class StartApplication {
         }
     }
 
-    private void userMenu(boolean loggedId) {
-        while (loggedId) {
+    private void userMenu() {
+        while (loggedIn) {
             System.out.println("User menu:");
             System.out.println("1. Submit reading");
             System.out.println("2. View current readings");
@@ -90,6 +91,9 @@ public class StartApplication {
             }
             int choice = sc.nextInt();
             meterReadingMenu(choice);
+            if (!loggedIn) {
+                return;
+            }
         }
     }
 
@@ -133,8 +137,15 @@ public class StartApplication {
         System.out.println("Enter name and password for login:");
         String name = sc.next();
         String password = sc.next();
-        user = webService.handleLoginRequest(name, password);
-        audition.auditAction(user, Audit.LOGIN);
+        User loginUser = webService.handleLoginRequest(name, password);
+        if (loginUser != null) {
+            user = loginUser;
+            loggedIn = true;
+            audition.auditAction(user, Audit.LOGIN);
+            userMenu();
+        } else {
+            System.out.println("Login failed.");
+        }
     }
 
     private void submitReading() {
@@ -177,7 +188,8 @@ public class StartApplication {
         System.out.println("User logged out successfully");
         loggedIn = false;
         audition.auditAction(user, Audit.LOGOUT);
-        return;
+        audition.auditAction(user, Audit.SESSION_END);
+        user = null;
     }
 }
     
