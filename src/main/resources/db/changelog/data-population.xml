@@ -1,0 +1,62 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+    <changeSet id="populateTableUsers" author="razlivinsky">
+        <insert tableName="usr" schemaName="my_schema">
+            <column name="name" value="Nata"/>
+            <column name="password" value="pass"/>
+            <column name="role" value="user"/>
+        </insert>
+        <insert tableName="usr" schemaName="my_schema">
+            <column name="name" value="Olya"/>
+            <column name="password" value="test"/>
+            <column name="role" value="user"/>
+        </insert>
+        <insert tableName="usr" schemaName="my_schema">
+            <column name="name" value="Venya"/>
+            <column name="password" value="ylab"/>
+            <column name="role" value="admin"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="populateTableMeters" author="razlivinsky">
+        <insert tableName="mtr" schemaName="my_schema">
+            <column name="number_meter" value="0000000RW1"/>
+            <column name="date" valueDate="2024-01-01 12:34:56.789"/>
+            <column name="user_name" value="Nata"/>
+        </insert>
+        <insert tableName="mtr" schemaName="my_schema">
+            <column name="number_meter" value="ST444444P"/>
+            <column name="date" valueDate="2023-12-30 22:16:01.00001"/>
+            <column name="user_name" value="Nata"/>
+        </insert>
+        <insert tableName="mtr" schemaName="my_schema">
+            <column name="number_meter" value="99999333"/>
+            <column name="date"  valueDate="2024-01-23 17:00:51.6875"/>
+            <column name="user_name" value="Olya"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="populateTableMetersRedings" author="razlivinsky">
+        <insert tableName="mtr_readings" schemaName="my_schema">
+            <column name="mtr_id" value="1"/>
+            <column name="type" value="gas"/>
+            <column name="value" value="120"/>
+        </insert>
+        <insert tableName="mtr_readings" schemaName="my_schema">
+            <column name="mtr_id" value="2"/>
+            <column name="type" value="water"/>
+            <column name="value" value="100"/>
+        </insert>
+        <insert tableName="mtr_readings" schemaName="my_schema">
+            <column name="mtr_id" value="2"/>
+            <column name="type" value="gas"/>
+            <column name="value" value="38"/>
+        </insert>
+        <insert tableName="mtr_readings" schemaName="my_schema">
+            <column name="mtr_id" value="3"/>
+            <column name="type" value="hot_water"/>
+            <column name="value" value="200"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

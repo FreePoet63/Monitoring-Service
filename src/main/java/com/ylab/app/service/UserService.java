@@ -2,6 +2,7 @@ package com.ylab.app.service;
 
 import com.ylab.app.model.*;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -18,7 +19,7 @@ public interface UserService {
      * @param password the password for the user
      * @param role     the role of the user ("user" or "admin")
      */
-    void registerUser(String name, String password, String role);
+    void registerUser(String name, String password, UserRole role);
 
     /**
      * Logs in a user with the name and password.
@@ -35,13 +36,13 @@ public interface UserService {
      * @param user the user to check
      * @return true if the user has admin role, false otherwise
      */
-    boolean checkRole(User user);
+    boolean hasRoleAdmin(User user);
 
     /**
      * Retrieves a list of all users in the system.
      *
      * @return the list of all users
      */
-    List<User> getAllUsers();
+    List<User> getAllUsers() throws SQLException;
 }
 

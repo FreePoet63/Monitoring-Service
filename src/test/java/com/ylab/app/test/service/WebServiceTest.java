@@ -63,7 +63,7 @@ public class WebServiceTest {
     public void handleRegisterRequestWithValidData() {
         String name = "user1";
         String password = "pass1";
-        String role = "user";
+        UserRole role = UserRole.USER;
 
         webService.handleRegisterRequest(name, password, role);
 
@@ -76,7 +76,7 @@ public class WebServiceTest {
     public void handleRegisterRequestWithInvalidData() {
         String name = "user1";
         String password = "pass1";
-        String role = "user";
+        UserRole role = UserRole.USER;
         Mockito.doThrow(new IllegalArgumentException("Invalid data")).when(userService).registerUser(name, password, role);
 
         webService.handleRegisterRequest(name, password, role);
@@ -143,11 +143,12 @@ public class WebServiceTest {
         String type = "gas";
         double value = 10.0;
 
-        User user = new User("user1", "111", "user");
+        User user = new User("user1", "111", UserRole.USER);
+        List<MeterReadingDetails> details = List.of(new MeterReadingDetails(1L, type, value));
 
-        webService.handleSubmitReadingRequest(user, numberMeter, type, value);
+        webService.handleSubmitReadingRequest(user, numberMeter, details);
 
-        Mockito.verify(meterService).submitReading(user, numberMeter, type, value);
+        Mockito.verify(meterService).submitReading(user, numberMeter, details);
         Assertions.assertThat(outContent.toString()).contains("Reading submitted successfully");
     }
 
@@ -157,11 +158,12 @@ public class WebServiceTest {
         String numberMeter = "123";
         String type = "gas";
         double value = 10.0;
-        Mockito.doThrow(new IllegalArgumentException("Invalid data")).when(meterService).submitReading(user, numberMeter, type, value);
+        List<MeterReadingDetails> details = List.of(new MeterReadingDetails(1L, type, value));
+        Mockito.doThrow(new IllegalArgumentException("Invalid data")).when(meterService).submitReading(user, numberMeter, details);
 
-        webService.handleSubmitReadingRequest(user, numberMeter, type, value);
+        webService.handleSubmitReadingRequest(user, numberMeter, details);
 
-        Mockito.verify(meterService).submitReading(user, numberMeter, type, value);
+        Mockito.verify(meterService).submitReading(user, numberMeter, details);
         Assertions.assertThat(outContent.toString()).contains("Error: Invalid data");
     }
 
@@ -217,13 +219,13 @@ public class WebServiceTest {
     @Test
     @DisplayName("Handle get all readings request with valid admin user")
     public void handleGetAllReadingsRequestWithValidAdminUser() {
-        Mockito.when(userService.checkRole(user)).thenReturn(true);
+        Mockito.when(userService.hasRoleAdmin(user)).thenReturn(true);
         Mockito.when(meterService.getAllReadingsHistory(user)).thenReturn(List.of(meterReading, meterReading, meterReading, meterReading));
         Mockito.when(meterReading.toString()).thenReturn("MeterReading{numberMeter='123', date=2024-01-15, userName='user1', readings={gas=10.0, water=20.0}}");
 
         webService.handleGetAllReadingsRequest(user);
 
-        Mockito.verify(userService).checkRole(user);
+        Mockito.verify(userService).hasRoleAdmin(user);
 
         Mockito.verify(meterService).getAllReadingsHistory(user);
         Assertions.assertThat(outContent.toString()).contains("All readings across all users:");
@@ -234,11 +236,11 @@ public class WebServiceTest {
     @Test
     @DisplayName("Handle get all readings request with non-admin user")
     public void handleGetAllReadingsRequestWithNonAdminUser() {
-        Mockito.when(userService.checkRole(user)).thenReturn(false);
+        Mockito.when(userService.hasRoleAdmin(user)).thenReturn(false);
 
         webService.handleGetAllReadingsRequest(user);
 
-        Mockito.verify(userService).checkRole(user);
+        Mockito.verify(userService).hasRoleAdmin(user);
         Mockito.verify(meterService, Mockito.never()).getAllReadingsHistory(user);
         Assertions.assertThat(outContent.toString()).contains("Error: User does not have the necessary permissions to access all readings");
     }

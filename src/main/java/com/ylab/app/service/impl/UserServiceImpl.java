@@ -1,9 +1,15 @@
 package com.ylab.app.service.impl;
 
-import com.ylab.app.model.*;
-import com.ylab.app.service.*;
+import com.ylab.app.dbService.dao.impl.UserDaoImpl;
+import com.ylab.app.exception.userException.UserValidationException;
+import com.ylab.app.model.Session;
+import com.ylab.app.model.User;
+import com.ylab.app.model.UserRole;
+import com.ylab.app.service.UserService;
 
-import java.util.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a service for managing users in the system.
@@ -12,13 +18,13 @@ import java.util.*;
  * @since 24.01.2024
  */
 public class UserServiceImpl implements UserService {
-    private Map<String, User> users;
+    private UserDaoImpl userDao;
 
     /**
      * Instantiates a new user service with an empty user map.
      */
     public UserServiceImpl() {
-        this.users = new HashMap<>();
+        this.userDao = new UserDaoImpl();
     }
 
     /**
@@ -27,24 +33,19 @@ public class UserServiceImpl implements UserService {
      * @param name     the name of the user
      * @param password the password for the user
      * @param role     the role of the user ("user" or "admin")
-     * @throws IllegalArgumentException  if the name, password, or role is invalid
-     * @throws IllegalStateException      if the user already exists
+     * @throws UserValidationException  if the name, password, or role is invalid
      */
-    public void registerUser(String name, String password, String role) {
-        if (name == null || name.isEmpty() || name.contains(" ")) {
-            throw new IllegalArgumentException("Invalid name");
+    public void registerUser(String name, String password, UserRole role) {
+        validateFromUserNameAndPassword(name, password);
+        if (role == null || !(role.equals(UserRole.USER) || role.equals(UserRole.ADMIN))) {
+            throw new UserValidationException("Invalid role");
         }
-        if (password == null || password.isEmpty() || password.contains(" ")) {
-            throw new IllegalArgumentException("Invalid password");
+        User user = new User(name, password, UserRole.USER);
+        try {
+            userDao.insertUser(user);
+        } catch (SQLException e) {
+            throw new UserValidationException("Problem registration " + e.getMessage());
         }
-        if (role == null || !(role.equals("user") || role.equals("admin"))) {
-            throw new IllegalArgumentException("Invalid role");
-        }
-        if (users.containsKey(name)) {
-            throw new IllegalStateException("User already exists");
-        }
-        User user = new User(name, password, role);
-        users.put(name, user);
     }
 
     /**
@@ -53,24 +54,21 @@ public class UserServiceImpl implements UserService {
      * @param name     the name of the user
      * @param password the password of the user
      * @return the logged-in user
-     * @throws IllegalArgumentException  if the name or password is invalid
-     * @throws IllegalStateException      if the user does not exist or the password is wrong
+     * @throws UserValidationException  if the name or password is invalid
      */
     public User loginUser(String name, String password) {
-        if (name == null || name.isEmpty() || name.contains(" ")) {
-            throw new IllegalArgumentException("Invalid name");
+        validateFromUserNameAndPassword(name, password);
+        try {
+            User user = userDao.findUserByNameAndPassword(name, password);
+            if (user == null) {
+                throw new UserValidationException("Invalid credentials");
+            }
+            Session session = Session.getInstance();
+            session.setUser(user);
+            return user;
+        } catch (SQLException e) {
+            throw new UserValidationException("An error occurred while logging in. Please try again. " + e.getMessage());
         }
-        if (password == null || password.isEmpty() || password.contains(" ")) {
-            throw new IllegalArgumentException("Invalid password");
-        }
-        if (!users.containsKey(name)) {
-            throw new IllegalStateException("User does not exist");
-        }
-        User user = users.get(name);
-        if (!user.getPassword().equals(password)) {
-            throw new IllegalStateException("Wrong password");
-        }
-        return user;
     }
 
     /**
@@ -78,13 +76,13 @@ public class UserServiceImpl implements UserService {
      *
      * @param user the user to check
      * @return true if the user has admin role, false otherwise
-     * @throws IllegalArgumentException if the user is null
+     * @throws UserValidationException if the user is null
      */
-    public boolean checkRole(User user) {
+    public boolean hasRoleAdmin(User user) {
         if (user == null) {
-            throw new IllegalArgumentException("Invalid user");
+            throw new UserValidationException("Invalid user");
         }
-        if (user.getRole().equals("admin")) {
+        if (user.getRole().equals(UserRole.ADMIN)) {
             return true;
         } else {
             return false;
@@ -97,6 +95,27 @@ public class UserServiceImpl implements UserService {
      * @return the list of all users
      */
     public List<User> getAllUsers() {
-        return new ArrayList<>(users.values());
+        try {
+            return new ArrayList<>(userDao.getAllUsers());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new UserValidationException("An error occurred while retrieving users. Please try again.");
+        }
+    }
+
+    /**
+     * Validates the username and password for any potential issues.
+     *
+     * @param name     the username to be validated
+     * @param password the password to be validated
+     * @throws UserValidationException if the username or password is invalid
+     */
+    private void validateFromUserNameAndPassword(String name, String password) {
+        if (name == null || name.isEmpty() || name.contains(" ")) {
+            throw new UserValidationException("Invalid credentials");
+        }
+        if (password == null || password.isEmpty() || password.contains(" ")) {
+            throw new UserValidationException("Invalid credentials");
+        }
     }
 }

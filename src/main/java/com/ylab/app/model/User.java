@@ -1,7 +1,5 @@
 package com.ylab.app.model;
 
-import java.util.*;
-
 /**
  * Represents a user in the system.
  *
@@ -9,10 +7,10 @@ import java.util.*;
  * @since 24.01.2024
  */
 public class User {
+    private Long id;
     private String name;
     private String password;
-    private String role;
-    private List<MeterReading> readings;
+    private UserRole role;
 
     /**
      * Instantiates a new User with the specified name, password, and role.
@@ -21,11 +19,28 @@ public class User {
      * @param password the password for the user
      * @param role     the role of the user
      */
-    public User(String name, String password, String role) {
+    public User(String name, String password, UserRole role) {
         this.name = name;
         this.password = password;
         this.role = role;
-        this.readings = new ArrayList<>();
+    }
+
+    /**
+     * Gets id of the user.
+     *
+     * @return the id of the user
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * Sets id of the user
+     *
+     * @param id the id of the user to be set
+     */
+    public void setId(Long id) {
+        this.id = id;
     }
 
     /**
@@ -34,6 +49,7 @@ public class User {
      * @return the name of the user
      */
     public String getName() {
+
         return name;
     }
 
@@ -69,7 +85,7 @@ public class User {
      *
      * @return the role of the user
      */
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
@@ -78,35 +94,8 @@ public class User {
      *
      * @param role the role of the user to be set
      */
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
-    }
-
-    /**
-     * Gets the list of meter readings associated with the user.
-     *
-     * @return the list of meter readings
-     */
-    public List<MeterReading> getReadings() {
-        return readings;
-    }
-
-    /**
-     * Sets the list of meter readings associated with the user.
-     *
-     * @param readings the list of meter readings to be set
-     */
-    public void setReadings(List<MeterReading> readings) {
-        this.readings = readings;
-    }
-
-    /**
-     * Adds a meter reading to the user's readings list.
-     *
-     * @param reading the meter reading to be added
-     */
-    public void addReading(MeterReading reading) {
-        this.readings.add(reading);
     }
 
     /**
@@ -114,12 +103,12 @@ public class User {
      *
      * @return a string with the user details
      */
+    @Override
     public String toString() {
         return "User{" +
                 "name='" + name + '\'' +
                 ", password='" + password + '\'' +
                 ", role='" + role + '\'' +
-                ", readings=" + readings +
                 '}';
     }
 }

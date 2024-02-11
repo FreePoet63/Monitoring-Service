@@ -2,6 +2,7 @@ package com.ylab.app.service;
 
 import com.ylab.app.model.*;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -24,10 +25,9 @@ public interface MeterService {
      *
      * @param user        the user submitting the reading
      * @param numberMeter the meter number
-     * @param type        the type of reading
-     * @param value       the value of the reading
+     * @param readings    list the type of reading
      */
-    void submitReading(User user, String numberMeter, String type, double value);
+    void submitReading(User user, String numberMeter, List<MeterReadingDetails> readings);
 
     /**
      * Gets the readings for the specified user and month.
@@ -52,5 +52,5 @@ public interface MeterService {
      * @param adminUser the admin user retrieving the readings history
      * @return the list of all readings history
      */
-    List<MeterReading> getAllReadingsHistory(User adminUser);
+    List<MeterReading> getAllReadingsHistory(User adminUser) throws SQLException;
 }
