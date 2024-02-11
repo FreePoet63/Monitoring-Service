@@ -1,6 +1,9 @@
 package com.ylab.app.service;
 
 import com.ylab.app.model.*;
+import com.ylab.app.model.dto.MeterReadingDetailsDto;
+import com.ylab.app.model.dto.MeterReadingDto;
+import com.ylab.app.model.dto.UserDto;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -18,7 +21,7 @@ public interface MeterService {
      * @param user the user for whom the readings are retrieved
      * @return the list of current readings
      */
-    List<MeterReading> getCurrentReadings(User user);
+    public List<MeterReadingDto> getCurrentReadings(User user);
 
     /**
      * Submits a new reading for the specified user and meter.
@@ -27,7 +30,7 @@ public interface MeterService {
      * @param numberMeter the meter number
      * @param readings    list the type of reading
      */
-    void submitReading(User user, String numberMeter, List<MeterReadingDetails> readings);
+    public MeterReadingDto submitReading(User user, String numberMeter, List<MeterReadingDetailsDto> readings);
 
     /**
      * Gets the readings for the specified user and month.
@@ -36,7 +39,7 @@ public interface MeterService {
      * @param month the month for which readings are retrieved
      * @return the list of readings for the specified month
      */
-    List<MeterReading> getReadingsByMonth(User user, int month);
+    public List<MeterReadingDto> getReadingsByMonth(User user, int month);
 
     /**
      * Gets the readings history for the specified user.
@@ -44,7 +47,7 @@ public interface MeterService {
      * @param user the user for whom the readings history is retrieved
      * @return the list of readings history for the specified user
      */
-    List<MeterReading> getReadingsHistory(User user);
+    public List<MeterReadingDto> getReadingsHistory(User user);
 
     /**
      * Gets the readings history for all users (for admin user).
@@ -52,5 +55,5 @@ public interface MeterService {
      * @param adminUser the admin user retrieving the readings history
      * @return the list of all readings history
      */
-    List<MeterReading> getAllReadingsHistory(User adminUser) throws SQLException;
+    public List<MeterReadingDto> getAllReadingsHistory(User adminUser);
 }

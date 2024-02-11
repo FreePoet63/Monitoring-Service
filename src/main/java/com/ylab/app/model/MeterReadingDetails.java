@@ -11,6 +11,8 @@ public class MeterReadingDetails {
     private String type;
     private Double value;
 
+    public MeterReadingDetails() {}
+
     /**
      * Constructs a new MeterReadingDetails object with the specified details.
      *
@@ -97,8 +99,7 @@ public class MeterReadingDetails {
     @Override
     public String toString() {
         return "MeterReadingDetails{" +
-                "meterReadingId=" + meterReadingId +
-                ", type='" + type + '\'' +
+                "type=" + type + '\'' +
                 ", value=" + value +
                 '}';
     }

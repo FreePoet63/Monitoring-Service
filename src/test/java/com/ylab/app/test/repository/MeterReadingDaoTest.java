@@ -6,6 +6,8 @@ import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
 import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
+import com.ylab.app.test.util.TestContainersRepository;
+import com.ylab.app.test.util.TestDatabaseConnection;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,19 +32,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 04.02.2024
  */
 @Testcontainers
-public class MeterReadingDaoTest {
-    @Container
-    public static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(
-            getTestDataDatabase(TEST_DATABASE_VERSION))
-            .withDatabaseName(getTestDataDatabase(TEST_DATABASE))
-            .withUsername(getTestDataDatabase(TEST_USER))
-            .withPassword(getTestDataDatabase(TEST_PASSWORD));
-
+public class MeterReadingDaoTest extends TestContainersRepository {
     private MeterReadingDao meterReadingDao = new MeterReadingDaoImpl();
 
     @BeforeEach
     public void setUp() throws SQLException {
-        ConnectionManager manager = new ConnectionManager();
+        TestDatabaseConnection manager = new TestDatabaseConnection();
         manager.setConnection(
                 postgreSQLContainer.getJdbcUrl(),
                 postgreSQLContainer.getUsername(),
