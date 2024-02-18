@@ -13,6 +13,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.ylab.app.constants.CreateSchemaSql.INSERT_METER_SCHEMA;
+import static com.ylab.app.constants.CreateSchemaSql.INSERT_READING_DATA_SCHEMA;
 import static com.ylab.app.constants.SqlQueryClass.*;
 
 /**
@@ -30,9 +32,10 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      * @throws DatabaseWriteException if an error occurs while interacting with the database
      */
     public void insertMeterReading(MeterReading meterReading) throws SQLException {
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmtMtr = conn.prepareStatement(insertMtrSQL, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = ConnectionManager.getConnection();
+        conn.setAutoCommit(false);
 
+        try (PreparedStatement pstmtMtr = conn.prepareStatement(INSERT_METER_SCHEMA, Statement.RETURN_GENERATED_KEYS)) {
             pstmtMtr.setString(1, meterReading.getNumberMeter());
             pstmtMtr.setTimestamp(2, Timestamp.valueOf(meterReading.getDate()));
             pstmtMtr.setString(3, meterReading.getUser().getName());
@@ -45,10 +48,11 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
                         details.setMeterReadingId(mtrId);
                     }
                 } else {
+                    conn.rollback();
                     throw new DatabaseWriteException("Inserting meter reading failed, no ID obtained.");
                 }
             }
-            try (PreparedStatement pstmtReading = conn.prepareStatement(insertReadingSQL)) {
+            try (PreparedStatement pstmtReading = conn.prepareStatement(INSERT_READING_DATA_SCHEMA)) {
                 for (MeterReadingDetails details : meterReading.getDetailsList()) {
                     pstmtReading.setLong(1, details.getMeterReadingId());
                     pstmtReading.setString(2, details.getType());
@@ -56,8 +60,13 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
                     pstmtReading.executeUpdate();
                 }
             }
+            conn.commit();
         } catch (SQLException e) {
-            throw new DatabaseWriteException("invalid " + e.getMessage());
+            conn.rollback();
+            throw new DatabaseWriteException("Invalid write " + e.getMessage());
+        } finally {
+            conn.setAutoCommit(true);
+            conn.close();
         }
     }
 
@@ -69,30 +78,27 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      */
     public List<MeterReading> selectCurrentMaterReading(User user) {
         List<MeterReading> meterReadings = new ArrayList<>();
-        try (Connection conn = ConnectionManager.getConnection()) {
-            try (PreparedStatement pstmtMaxId = conn.prepareStatement(selectMaxIdSQL)) {
-                pstmtMaxId.setString(1, user.getName());
-                try (ResultSet rsMaxId = pstmtMaxId.executeQuery()) {
-                    if (rsMaxId.next()) {
-                        long maxId = rsMaxId.getLong(1);
-                        try (PreparedStatement pstmtAll = conn.prepareStatement(selectAllSQL)) {
-                            pstmtAll.setLong(1, maxId);
-                            try (ResultSet rsAll = pstmtAll.executeQuery()) {
-                                while (rsAll.next()) {
-                                    MeterReading meterReading = new MeterReading(
-                                            rsAll.getString("number_meter"),
-                                            rsAll.getTimestamp("date").toLocalDateTime(),
-                                            user);
-                                    meterReading.setUser(user);
-                                    String type = rsAll.getString("type");
-                                    double value = rsAll.getDouble("value");
-                                    meterReading.addReadingDetails(type, value);
-                                    meterReadings.add(meterReading);
-                                }
-                            }
+        try (Connection conn = ConnectionManager.getConnection();
+             PreparedStatement pstmtMaxId = conn.prepareStatement(FOUND_MAX_ID);
+             PreparedStatement pstmtAll = conn.prepareStatement(All_READINGS)) {
+
+            pstmtMaxId.setString(1, user.getName());
+            try (ResultSet rsMaxId = pstmtMaxId.executeQuery()) {
+                if (rsMaxId.next()) {
+                    long maxId = rsMaxId.getLong(1);
+                    pstmtAll.setLong(1, maxId);
+                    try (ResultSet rsAll = pstmtAll.executeQuery()) {
+                        while (rsAll.next()) {
+                            MeterReading meterReading = new MeterReading(
+                                    rsAll.getString("number_meter"),
+                                    rsAll.getTimestamp("date").toLocalDateTime(),
+                                    user);
+                            meterReading.setUser(user);
+                            String type = rsAll.getString("type");
+                            double value = rsAll.getDouble("value");
+                            meterReading.addReadingDetails(type, value);
+                            meterReadings.add(meterReading);
                         }
-                    } else {
-                        return meterReadings;
                     }
                 }
             }
@@ -111,7 +117,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
     public List<MeterReading> selectByNameUser(User user) {
         List<MeterReading> meterReadings = new ArrayList<>();
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(selectUserNameSQL)) {
+             PreparedStatement pstmt = conn.prepareStatement(SELECT_USER_NAME)) {
             pstmt.setString(1, user.getName());
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -141,7 +147,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
     public List<MeterReading> selectByAllMeterReadings() throws SQLException {
         List<MeterReading> meterReadings = new ArrayList<>();
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(selectAllMeterReadingSQL)) {
+             PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_METER_READINGS)) {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     String username = rs.getString("user_name");
@@ -161,7 +167,6 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
         return meterReadings;
     }
 
-
     /**
      * Finds the total sum of readings for a specific type and user.
      *
@@ -172,7 +177,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
     public double findToSumReadingForType(String type, User user) {
         double sum = 0;
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(selectSumValueSQL)) {
+             PreparedStatement pstmt = conn.prepareStatement(SELECT_SUM_VALUE)) {
             pstmt.setString(1, user.getName());
             pstmt.setString(2, type);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -197,7 +202,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
     public MeterReading findById(long id) throws SQLException {
         MeterReading meterReading = null;
         try (Connection conn = ConnectionManager.getConnection()) {
-            try (PreparedStatement pstmtMtr = conn.prepareStatement(selectMtrSQL)) {
+            try (PreparedStatement pstmtMtr = conn.prepareStatement(SELECT_METER)) {
                 pstmtMtr.setLong(1, id);
                 try (ResultSet rsMtr = pstmtMtr.executeQuery()) {
                     if (rsMtr.next()) {
@@ -211,7 +216,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
                     }
                 }
             }
-            try (PreparedStatement pstmtReading = conn.prepareStatement(selectReadingSQL)) {
+            try (PreparedStatement pstmtReading = conn.prepareStatement(SELECT_READING_ID)) {
                 pstmtReading.setLong(1, id);
                 try (ResultSet rsReading = pstmtReading.executeQuery()) {
                     while (rsReading.next()) {

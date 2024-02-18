@@ -11,6 +11,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.ylab.app.constants.CreateSchemaSql.INSERT_USER_SCHEMA;
 import static com.ylab.app.constants.SqlQueryClass.*;
 
 /**
@@ -28,7 +29,7 @@ public class UserDaoImpl implements UserDao {
      */
     public void insertUser(User user) throws SQLException {
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = conn.prepareStatement(INSERT_USER_SCHEMA, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getName());
             stmt.setString(2, user.getPassword());
             stmt.setString(3, String.valueOf(user.getRole()));
@@ -55,7 +56,7 @@ public class UserDaoImpl implements UserDao {
      */
     public User findUserByNameAndPassword(String name, String password) throws SQLException {
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(loginQuery)) {
+             PreparedStatement stmt = conn.prepareStatement(LOGIN)) {
             stmt.setString(1, name);
             stmt.setString(2, password);
 
@@ -85,7 +86,7 @@ public class UserDaoImpl implements UserDao {
     public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
         try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(queryAllUsers);
+             PreparedStatement stmt = conn.prepareStatement(ALL_USERS);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 UserRole role = UserRole.fromString(rs.getString("role"));
@@ -100,5 +101,63 @@ public class UserDaoImpl implements UserDao {
             throw new DatabaseReadException("Invalid read " + e.getMessage());
         }
         return users;
+    }
+
+    /**
+     * Finds a user in the database by their id.
+     *
+     * @param id the id of the user
+     * @return the user with the specified id, or null if no such user is found
+     * @throws DatabaseReadException if an error occurs while interacting with the database
+     */
+    public User findUserById(long id) throws SQLException {
+        try (Connection conn = ConnectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(FIND_USER_BY_ID)) {
+            stmt.setLong(1, id);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    UserRole role = UserRole.fromString(rs.getString("role"));
+                    User user = new User(
+                            rs.getString("name"),
+                            rs.getString("password"),
+                            role);
+                    user.setId(rs.getLong("id"));
+                    return user;
+                }
+            }
+        } catch (SQLException e) {
+            throw new DatabaseReadException("Invalid read " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Retrieves a user from the database by their login name.
+     *
+     * @param login the login name of the user
+     * @return the user with the specified login name, or null if no such user is found
+     * @throws DatabaseReadException if an error occurs while interacting with the database
+     */
+    public User getUserByLogin(String login) throws SQLException {
+        try (Connection conn = ConnectionManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(FIND_USER_BY_LOGIN)) {
+            stmt.setString(1, login);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    UserRole role = UserRole.fromString(rs.getString("role"));
+                    User user = new User(
+                            rs.getString("name"),
+                            rs.getString("password"),
+                            role);
+                    user.setId(rs.getLong("id"));
+                    return user;
+                }
+            }
+        } catch (SQLException e) {
+            throw new DatabaseReadException("Invalid read " + e.getMessage());
+        }
+        return null;
     }
 }

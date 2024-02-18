@@ -33,19 +33,6 @@ public class ConnectionManager {
         }
         return connection;
     }
-
-    /**
-     * Sets the connection database who is logged in
-     *
-     * @param url a string containing the url of the database
-     *
-     * @param user a string containing the user of the database
-     *
-     * @param password a string containing the password of the database
-     */
-    public void setConnection(String url, String user, String password) throws SQLException {
-        connection = DriverManager.getConnection(url, user, password);
-    }
 }
 
 

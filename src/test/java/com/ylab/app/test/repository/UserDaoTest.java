@@ -5,6 +5,8 @@ import com.ylab.app.dbService.dao.UserDao;
 import com.ylab.app.dbService.dao.impl.UserDaoImpl;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
+import com.ylab.app.test.util.TestContainersRepository;
+import com.ylab.app.test.util.TestDatabaseConnection;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,24 +33,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 04.02.2024
  */
 @Testcontainers
-public class UserDaoTest {
-    @Container
-    public static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(
-            getTestDataDatabase(TEST_DATABASE_VERSION))
-            .withDatabaseName(getTestDataDatabase(TEST_DATABASE))
-            .withUsername(getTestDataDatabase(TEST_USER))
-            .withPassword(getTestDataDatabase(TEST_PASSWORD));
-
+public class UserDaoTest extends TestContainersRepository {
     @BeforeEach
     public void setUp() throws SQLException {
-        ConnectionManager manager = new ConnectionManager();
+        TestDatabaseConnection manager = new TestDatabaseConnection();
         manager.setConnection(
                 postgreSQLContainer.getJdbcUrl(),
                 postgreSQLContainer.getUsername(),
                 postgreSQLContainer.getPassword()
         );
     }
-
     @Test
     @DisplayName("Insert user into database")
     public void testInsertUser() throws SQLException {

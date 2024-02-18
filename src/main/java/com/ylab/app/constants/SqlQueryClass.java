@@ -9,19 +9,18 @@ package com.ylab.app.constants;
  * @since 03.02.2024
  */
 public class SqlQueryClass {
-    public static String insertQuery = "INSERT INTO my_schema.usr (name, password, role) VALUES (?, ?, ?)";
-    public static String loginQuery = "SELECT * FROM my_schema.usr WHERE name = ? AND password = ?";
-    public static String queryAllUsers = "SELECT * FROM my_schema.usr";
-    public static String insertMtrSQL = "INSERT INTO my_schema.mtr (number_Meter, date, user_name) VALUES (?, ?, ?)";
-    public static String insertReadingSQL = "INSERT INTO my_schema.mtr_readings (mtr_id, type, value) VALUES (?, ?, ?)";
-    public static String selectMaxIdSQL = "SELECT MAX(id) FROM my_schema.mtr WHERE user_name = ?";
-    public static String selectAllSQL = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr " +
+    public static final String LOGIN = "SELECT * FROM my_schema.usr WHERE name = ? AND password = ?";
+    public static final String ALL_USERS = "SELECT * FROM my_schema.usr";
+    public static final String FOUND_MAX_ID = "SELECT MAX(id) FROM my_schema.mtr WHERE user_name = ?";
+    public static final String All_READINGS = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr " +
             "INNER JOIN my_schema.mtr_readings mv ON mr.id = mv.mtr_id WHERE mr.id = ?";
-    public static String selectUserNameSQL = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr " +
+    public static final String SELECT_USER_NAME = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr " +
             "INNER JOIN my_schema.mtr_readings mv ON mr.id = mv.mtr_id WHERE mr.user_name = ?";
-    public static String selectAllMeterReadingSQL = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr INNER JOIN my_schema.mtr_readings mv ON mr.id = mv.mtr_id";
-    public static String selectSumValueSQL = "SELECT mv.value FROM my_schema.mtr mr " +
+    public static final String SELECT_ALL_METER_READINGS = "SELECT mr.*, mv.type, mv.value FROM my_schema.mtr mr INNER JOIN my_schema.mtr_readings mv ON mr.id = mv.mtr_id";
+    public static final String SELECT_SUM_VALUE = "SELECT mv.value FROM my_schema.mtr mr " +
             "INNER JOIN my_schema.mtr_readings mv ON mr.id = mv.mtr_id WHERE mr.user_name = ? AND mv.type = ?";
-    public static String selectMtrSQL = "SELECT * FROM my_schema.mtr WHERE id = ?";
-    public static String selectReadingSQL = "SELECT * FROM my_schema.mtr_readings WHERE mtr_id = ?";
+    public static final String SELECT_METER = "SELECT * FROM my_schema.mtr WHERE id = ?";
+    public static final String SELECT_READING_ID = "SELECT * FROM my_schema.mtr_readings WHERE mtr_id = ?";
+    public static final String FIND_USER_BY_ID = "SELECT * FROM my_schema.usr WHERE id = ?";
+    public static final String FIND_USER_BY_LOGIN = "SELECT * FROM my_schema.usr WHERE name = ?";
 }

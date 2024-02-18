@@ -2,8 +2,10 @@ package com.ylab.app.test.service;
 
 import com.ylab.app.dbService.dao.impl.UserDaoImpl;
 import com.ylab.app.exception.userException.UserValidationException;
+import com.ylab.app.mapper.UserMapper;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
+import com.ylab.app.model.dto.UserDto;
 import com.ylab.app.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * UserServiceTest class
@@ -48,7 +52,7 @@ public class UserServiceTest {
 
         when(dao.findUserByNameAndPassword(name, password)).thenReturn(null);
 
-        userService.registerUser(name, password, role);
+        userService.registerUser(name, password);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(dao).insertUser(userCaptor.capture());
@@ -65,7 +69,7 @@ public class UserServiceTest {
         String password = "123";
         UserRole role = UserRole.USER;
 
-        assertThatThrownBy(() -> userService.registerUser(name, password, role))
+        assertThatThrownBy(() -> userService.registerUser(name, password))
                 .isInstanceOf(UserValidationException.class)
                 .hasMessage("Invalid credentials");
 
@@ -83,7 +87,7 @@ public class UserServiceTest {
         when(dao.findUserByNameAndPassword(name, password)).thenReturn(expected);
         when(dao.getAllUsers()).thenReturn(Collections.singletonList(expected));
 
-        User result = userService.loginUser(name, password);
+        UserDto result = userService.loginUser(name, password);
 
         assertThat(result).isNotNull()
                 .usingRecursiveComparison()
@@ -164,14 +168,15 @@ public class UserServiceTest {
         User user1 = new User("user1", "123", UserRole.USER);
         User user2 = new User("user2", "456", UserRole.ADMIN);
 
-        List<User> result = List.of(user1, user2);
+        List<User> expected = List.of(user1, user2);
 
-        when(dao.getAllUsers()).thenReturn(result);
+        when(dao.getAllUsers()).thenReturn(expected);
 
-        assertThat(result).isNotNull()
-                .usingRecursiveComparison()
-                .ignoringFields()
-                .isEqualTo(userService.getAllUsers());
+        List<UserDto> actual = userService.getAllUsers();
+
+        assertThat(actual).isNotNull().hasSize(2);
+        assertThat(actual).extracting(UserDto::getName).contains(user1.getName(), user2.getName());
     }
+
 
 }
