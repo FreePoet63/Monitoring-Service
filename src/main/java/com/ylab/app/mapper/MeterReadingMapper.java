@@ -5,26 +5,21 @@ import com.ylab.app.model.dto.MeterReadingDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
-import org.mapstruct.factory.Mappers;
 
 /**
- * MeterReadingMapper class
+ * MeterReadingMapper interface for mapping between MeterReading and MeterReadingDto objects.
+ * This interface is used as a component in a Spring application and utilizes the MapStruct library for object mapping.
  *
  * @author HP
  * @since 09.02.2024
  */
-@Mapper(uses = {MeterReadingDetailsMapper.class})
+@Mapper(componentModel = "spring", uses = {MeterReadingDetailsMapper.class})
 public interface MeterReadingMapper {
     /**
-     * The constant INSTANCE.
-     */
-    MeterReadingMapper INSTANCE = Mappers.getMapper(MeterReadingMapper.class);
-
-    /**
-     * Meter reading to meter reading dto meter reading dto.
+     * Maps a MeterReading object to a MeterReadingDto object.
      *
-     * @param meterReading the meter reading
-     * @return the meter reading dto
+     * @param meterReading the MeterReading object to map
+     * @return the mapped MeterReadingDto object
      */
     @Mappings({
             @Mapping(target = "id", source = "id"),
@@ -36,10 +31,10 @@ public interface MeterReadingMapper {
     MeterReadingDto meterReadingToMeterReadingDto(MeterReading meterReading);
 
     /**
-     * Meter reading dto to meter reading meter reading.
+     * Maps a MeterReadingDto object to a MeterReading object.
      *
-     * @param meterReadingDto the meter reading dto
-     * @return the meter reading
+     * @param meterReadingDto the MeterReadingDto object to map
+     * @return the mapped MeterReading object
      */
     @Mappings({
             @Mapping(target = "id", source = "id"),

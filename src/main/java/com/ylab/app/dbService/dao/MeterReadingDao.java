@@ -21,7 +21,7 @@ public interface MeterReadingDao {
      * @param meterReading the meter reading object to be inserted
      * @throws SQLException if an error occurs while interacting with the database
      */
-    public void insertMeterReading(MeterReading meterReading) throws SQLException;
+    public void insertMeterReading(MeterReading meterReading);
 
     /**
      * Selects the list of current meter readings for the specified user from the database.
@@ -37,7 +37,7 @@ public interface MeterReadingDao {
      * @param user the user for whom to retrieve the meter readings
      * @return list of meter readings for the specified user
      */
-    public List<MeterReading> selectByNameUser(User user);
+    public List<MeterReading> selectByUserName(User user);
 
     /**
      * Selects all meter readings from the database.
@@ -46,22 +46,4 @@ public interface MeterReadingDao {
      * @throws SQLException if an error occurs while interacting with the database
      */
     public List<MeterReading> selectByAllMeterReadings() throws SQLException;
-
-    /**
-     * Finds the total sum of readings for a specific type and user.
-     *
-     * @param type type for which to find the sum of readings
-     * @param user the user for whom to find the sum of readings
-     * @return the total sum of readings for the specified type and user
-     */
-    public double findToSumReadingForType(String type, User user);
-
-    /**
-     * Finds a meter reading by its ID.
-     *
-     * @param id the ID of the meter reading to find
-     * @return meter reading with the specified ID
-     * @throws SQLException if an error occurs while interacting with the database
-     */
-    public MeterReading findById(long id) throws SQLException;
 }

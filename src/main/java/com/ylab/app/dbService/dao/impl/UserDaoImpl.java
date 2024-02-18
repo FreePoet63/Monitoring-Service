@@ -1,163 +1,126 @@
 package com.ylab.app.dbService.dao.impl;
 
-import com.ylab.app.dbService.connection.ConnectionManager;
 import com.ylab.app.dbService.dao.UserDao;
 import com.ylab.app.exception.dbException.DatabaseReadException;
 import com.ylab.app.exception.dbException.DatabaseWriteException;
+import com.ylab.app.exception.userException.UserValidationException;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Objects;
 
 import static com.ylab.app.constants.CreateSchemaSql.INSERT_USER_SCHEMA;
 import static com.ylab.app.constants.SqlQueryClass.*;
 
 /**
- * The UserDaoImpl class provides methods for data access related to users in the database.
- * It includes methods for inserting a new user, finding a user by name and password, and getting a list of all users.
+ * The UserDaoImpl class provides methods for data access related to users in the database. It includes methods for inserting a new user, finding a user by name and password, and getting a list of all users.
+ *
  * @author razlivinsky
  * @since 29.01.2024
  */
+@Repository
 public class UserDaoImpl implements UserDao {
-    /**
-     * Inserts the provided user into the database.
-     *
-     * @param user the user object to be inserted
-     * @throws DatabaseWriteException if an error occurs while interacting with the database
-     */
-    public void insertUser(User user) throws SQLException {
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(INSERT_USER_SCHEMA, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setString(1, user.getName());
-            stmt.setString(2, user.getPassword());
-            stmt.setString(3, String.valueOf(user.getRole()));
-            stmt.executeUpdate();
+    private final JdbcTemplate jdbcTemplate;
 
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    long id = rs.getLong(1);
-                    user.setId(id);
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseWriteException("Inserting meter reading failed, no ID obtained.");
-        }
+    /**
+     * Instantiates a new UserDaoImpl.
+     *
+     * @param jdbcTemplate the JdbcTemplate for database interaction
+     */
+    public UserDaoImpl(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    /**
-     * Finds a user in the database by their name and password.
-     *
-     * @param name the name of the user
-     * @param password the password of the user
-     * @return the user with the specified name and password, or null if no such user is found
-     * @throws DatabaseReadException if an error occurs while interacting with the database
-     */
-    public User findUserByNameAndPassword(String name, String password) throws SQLException {
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(LOGIN)) {
-            stmt.setString(1, name);
-            stmt.setString(2, password);
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
+        UserRole role = UserRole.fromString(rs.getString("role"));
+        User user = new User(rs.getString("name"), rs.getString("password"), role);
+        user.setId(rs.getLong("id"));
+        return user;
+    };
 
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    UserRole role = UserRole.fromString(rs.getString("role"));
-                    User user = new User(
-                            rs.getString("name"),
-                            rs.getString("password"),
-                            role);
-                    user.setId(rs.getLong("id"));
-                    return user;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+    /**
+     * Inserts a new user into the database.
+     *
+     * @param user the user object to be inserted
+     * @throws DatabaseWriteException if an error occurs during the insertion
+     */
+    @Override
+    public void insertUser(User user) {
+        try {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(INSERT_USER_SCHEMA, new String[] {"id"});
+                ps.setString(1, user.getName());
+                ps.setString(2, user.getPassword());
+                ps.setString(3, user.getRole().name());
+                return ps;
+            }, keyHolder);
+            user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        } catch (DataAccessException e) {
+            throw new DatabaseWriteException("Failed to insert user", e);
         }
-        return null;
     }
 
     /**
      * Retrieves a list of all users from the database.
      *
-     * @return a list of all users in the database
-     * @throws DatabaseReadException if an error occurs while interacting with the database
+     * @return a list of all users
+     * @throws DatabaseReadException if an error occurs while retrieving the data
      */
-    public List<User> getAllUsers() throws SQLException {
-        List<User> users = new ArrayList<>();
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(ALL_USERS);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                UserRole role = UserRole.fromString(rs.getString("role"));
-                User user = new User(
-                        rs.getString("name"),
-                        rs.getString("password"),
-                        role);
-                user.setId(rs.getLong("id"));
-                users.add(user);
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+    @Override
+    public List<User> getAllUsers() {
+        try {
+            return jdbcTemplate.query(ALL_USERS, userRowMapper);
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve all users", e);
         }
-        return users;
     }
 
     /**
-     * Finds a user in the database by their id.
+     * Finds a user by their ID.
      *
-     * @param id the id of the user
-     * @return the user with the specified id, or null if no such user is found
-     * @throws DatabaseReadException if an error occurs while interacting with the database
+     * @param id the ID of the user to find
+     * @return the user with the specified ID
+     * @throws UserValidationException if the user with the given ID is not found
+     * @throws DatabaseReadException if an error occurs while retrieving the data
      */
-    public User findUserById(long id) throws SQLException {
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(FIND_USER_BY_ID)) {
-            stmt.setLong(1, id);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    UserRole role = UserRole.fromString(rs.getString("role"));
-                    User user = new User(
-                            rs.getString("name"),
-                            rs.getString("password"),
-                            role);
-                    user.setId(rs.getLong("id"));
-                    return user;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+    @Override
+    public User findUserById(long id) {
+        try {
+            return jdbcTemplate.queryForObject(FIND_USER_BY_ID, userRowMapper, id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new UserValidationException("user not found", e);
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve user by id", e);
         }
-        return null;
     }
 
-    /**
-     * Retrieves a user from the database by their login name.
-     *
-     * @param login the login name of the user
-     * @return the user with the specified login name, or null if no such user is found
-     * @throws DatabaseReadException if an error occurs while interacting with the database
-     */
-    public User getUserByLogin(String login) throws SQLException {
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(FIND_USER_BY_LOGIN)) {
-            stmt.setString(1, login);
 
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    UserRole role = UserRole.fromString(rs.getString("role"));
-                    User user = new User(
-                            rs.getString("name"),
-                            rs.getString("password"),
-                            role);
-                    user.setId(rs.getLong("id"));
-                    return user;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+    /**
+     * Finds a user by their login name.
+     *
+     * @param login the login name of the user to find
+     * @return the user with the specified login name
+     * @throws UserValidationException if the user with the given login name is not found
+     * @throws DatabaseReadException if an error occurs while retrieving the data
+     */
+    @Override
+    public User getUserByLogin(String login) {
+        try {
+            return jdbcTemplate.queryForObject(FIND_USER_BY_LOGIN, userRowMapper, login);
+        } catch (EmptyResultDataAccessException e) {
+            throw new UserValidationException("user not found", e);
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve user by login", e);
         }
-        return null;
     }
 }

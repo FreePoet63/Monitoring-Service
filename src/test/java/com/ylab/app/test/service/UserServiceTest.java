@@ -2,7 +2,6 @@ package com.ylab.app.test.service;
 
 import com.ylab.app.dbService.dao.impl.UserDaoImpl;
 import com.ylab.app.exception.userException.UserValidationException;
-import com.ylab.app.mapper.UserMapper;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
 import com.ylab.app.model.dto.UserDto;
@@ -25,13 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /**
  * UserServiceTest class
  *
- * @author HP
+ * @author razlivinsky
  * @since 27.01.2024
  */
 @ExtendWith(MockitoExtension.class)
@@ -46,30 +43,25 @@ public class UserServiceTest {
     @Test
     @DisplayName("Register user with valid name, password and role")
     public void registerUserWithValidNamePasswordAndRole() throws SQLException {
-        String name = "test";
-        String password = "123";
-        UserRole role = UserRole.USER;
+        User user = new User("test", "123", UserRole.USER);
+        when(dao.getUserByLogin(user.getName())).thenReturn(null);
 
-        when(dao.findUserByNameAndPassword(name, password)).thenReturn(null);
-
-        userService.registerUser(name, password);
+        userService.registerUser(user);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(dao).insertUser(userCaptor.capture());
         User capturedUser = userCaptor.getValue();
-        assertThat(capturedUser.getName()).isEqualTo(name);
-        assertThat(capturedUser.getPassword()).isEqualTo(password);
-        assertThat(capturedUser.getRole()).isEqualTo(role);
+        assertThat(capturedUser.getName()).isEqualTo(user.getName());
+        assertThat(capturedUser.getPassword()).isEqualTo(user.getPassword());
+        assertThat(capturedUser.getRole()).isEqualTo(user.getRole());
     }
 
     @Test
     @DisplayName("Register user with null name")
     public void registerUserWithNullName() {
-        String name = null;
-        String password = "123";
-        UserRole role = UserRole.USER;
+        User user = new User(null, "123", UserRole.USER);
 
-        assertThatThrownBy(() -> userService.registerUser(name, password))
+        assertThatThrownBy(() -> userService.registerUser(user))
                 .isInstanceOf(UserValidationException.class)
                 .hasMessage("Invalid credentials");
 
@@ -79,15 +71,11 @@ public class UserServiceTest {
     @Test
     @DisplayName("Login user with valid name and password")
     public void loginUserWithValidNameAndPassword() throws SQLException {
-        String name = "test";
-        String password = "123";
-        UserRole role = UserRole.USER;
-        User expected = new User(name, password, role);
-
-        when(dao.findUserByNameAndPassword(name, password)).thenReturn(expected);
+        User expected = new User("test", "123", UserRole.USER);
+        when(dao.getUserByLogin(expected.getName())).thenReturn(expected);
         when(dao.getAllUsers()).thenReturn(Collections.singletonList(expected));
 
-        UserDto result = userService.loginUser(name, password);
+        UserDto result = userService.getUserByLogin(expected.getName());
 
         assertThat(result).isNotNull()
                 .usingRecursiveComparison()
@@ -99,9 +87,8 @@ public class UserServiceTest {
     @DisplayName("Login user with non-existing name")
     public void loginUserWithNonExistingName() {
         String name = "test";
-        String password = "123";
 
-        assertThatThrownBy(() -> userService.loginUser(name, password))
+        assertThatThrownBy(() -> userService.getUserByLogin(name))
                 .isInstanceOf(UserValidationException.class)
                 .hasMessage("Invalid credentials");
     }
@@ -109,26 +96,17 @@ public class UserServiceTest {
     @Test
     @DisplayName("Login user with invalid name or password")
     public void loginUserWithInvalidNameOrPassword() throws SQLException {
-        String name = "test";
-        String password = "123";
-        String wrongName = "wrong";
-        String wrongPassword = "wrong";
-
-        when(dao.findUserByNameAndPassword(anyString(), anyString())).thenReturn(null);
-
-        assertThrows(UserValidationException.class, () -> userService.loginUser(wrongName, password));
-        assertThrows(UserValidationException.class, () -> userService.loginUser(name, wrongPassword));
+        User user = new User("wrong", "wrong", UserRole.USER);
+        when(dao.getUserByLogin(anyString())).thenReturn(null);
+        assertThrows(UserValidationException.class, () -> userService.getUserByLogin(user.getName()));
     }
 
     @Test
     @DisplayName("Check role for admin user")
     public void checkRoleForAdminUser() throws SQLException {
-        String name = "admin";
-        String password = "123";
-        UserRole role = UserRole.ADMIN;
-        User expected = new User(name, password, role);
+        User expected = new User("admin", "123", UserRole.ADMIN);
 
-        when(dao.findUserByNameAndPassword(name, password)).thenReturn(expected);
+        when(dao.getUserByLogin(expected.getName())).thenReturn(expected);
         when(dao.getAllUsers()).thenReturn(Collections.singletonList(expected));
 
         boolean result = userService.hasRoleAdmin(expected);
@@ -137,14 +115,11 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Check role for user user")
-    public void checkRoleForUserUser() throws SQLException {
-        String name = "user";
-        String password = "123";
-        UserRole role = UserRole.USER;
-        User expected = new User(name, password, role);
+    @DisplayName("Check role for user")
+    public void checkRoleForUser() throws SQLException {
+        User expected = new User("user", "123", UserRole.USER);
 
-        when(dao.findUserByNameAndPassword(name, password)).thenReturn(expected);
+        when(dao.getUserByLogin(expected.getName())).thenReturn(expected);
         when(dao.getAllUsers()).thenReturn(Collections.singletonList(expected));
 
         boolean result = userService.hasRoleAdmin(expected);
@@ -167,16 +142,12 @@ public class UserServiceTest {
     public void getAllUsers() throws SQLException {
         User user1 = new User("user1", "123", UserRole.USER);
         User user2 = new User("user2", "456", UserRole.ADMIN);
-
         List<User> expected = List.of(user1, user2);
 
         when(dao.getAllUsers()).thenReturn(expected);
-
         List<UserDto> actual = userService.getAllUsers();
 
         assertThat(actual).isNotNull().hasSize(2);
         assertThat(actual).extracting(UserDto::getName).contains(user1.getName(), user2.getName());
     }
-
-
 }

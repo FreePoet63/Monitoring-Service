@@ -14,7 +14,7 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="name" type="VARCHAR(50)" />
-            <column name="password" type="VARCHAR(50)" />
+            <column name="password" type="VARCHAR(255)" />
             <column name="role" type="VARCHAR(50)" />
         </createTable>
     </changeSet>
@@ -44,5 +44,14 @@
         <addForeignKeyConstraint baseTableSchemaName="my_schema" baseColumnNames="mtr_id" baseTableName="mtr_readings"
                                  constraintName="fk_mtr_id" referencedTableName="mtr"
                                  referencedColumnNames="id" referencedTableSchemaName="my_schema"/>
+    </changeSet>
+
+    <changeSet id="createTableAudit" author="razlivinsky">
+        <createTable tableName="audit" schemaName="my_schema">
+            <column name="id" type="SERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="message" type="VARCHAR(500)" />
+        </createTable>
     </changeSet>
 </databaseChangeLog>

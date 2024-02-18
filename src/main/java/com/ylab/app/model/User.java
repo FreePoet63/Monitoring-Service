@@ -12,6 +12,8 @@ public class User {
     private String password;
     private UserRole role;
 
+    public User() {}
+
     /**
      * Instantiates a new User with the specified name, password, and role.
      *
