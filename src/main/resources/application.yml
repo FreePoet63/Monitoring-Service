@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/meter_db
-    username: postgres
-    password: mother1963
+    url: jdbc:postgresql://localhost:5433/meter_db
+    username: user
+    password: ylab
   liquibase:
     change-log: classpath:db/changelog/liquibase-changelog.xml
     defaultSchema: my_custom_schema
