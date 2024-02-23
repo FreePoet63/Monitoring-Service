@@ -1,7 +1,5 @@
 package com.ylab.app.model;
 
-import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -141,18 +139,13 @@ public class MeterReading {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Meter reading №").append(numberMeter).append("\n");
-        sb.append("Date: ").append(date).append("\n");
-        for (MeterReadingDetails details : detailsList) {
-            String type = details.getType();
-            double totalByType = details.getValue();
-            double globalTotalByType = new MeterReadingDaoImpl().findToSumReadingForType(type, user);
-            sb.append(type).append(": ").append(totalByType)
-                    .append(" (Total: ").append(globalTotalByType).append(")\n");
-        }
-        sb.append(user);
-        return sb.toString();
+        return "MeterReading{" +
+                "id=" + id +
+                ", numberMeter='" + numberMeter + '\'' +
+                ", date=" + date +
+                ", user=" + user +
+                ", detailsList=" + detailsList +
+                '}';
     }
 }
 

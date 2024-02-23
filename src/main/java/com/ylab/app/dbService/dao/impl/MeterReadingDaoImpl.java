@@ -1,6 +1,5 @@
 package com.ylab.app.dbService.dao.impl;
 
-import com.ylab.app.dbService.connection.ConnectionManager;
 import com.ylab.app.dbService.dao.MeterReadingDao;
 import com.ylab.app.exception.dbException.DatabaseReadException;
 import com.ylab.app.exception.dbException.DatabaseWriteException;
@@ -8,9 +7,19 @@ import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.MeterReadingDetails;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.ylab.app.constants.CreateSchemaSql.INSERT_METER_SCHEMA;
@@ -18,55 +27,79 @@ import static com.ylab.app.constants.CreateSchemaSql.INSERT_READING_DATA_SCHEMA;
 import static com.ylab.app.constants.SqlQueryClass.*;
 
 /**
- * The MeterReadingDaoImpl class provides methods for data access related to meter readings in the database.
- * It includes methods for inserting meter readings, selecting meter readings, finding total sum of readings for a specific type, and finding a reading by its ID.
+ * Implementation of MeterReadingDao for interacting with the database to manage meter reading data.
+ *
+ * This class utilizes JdbcTemplate for database interaction and provides methods to insert meter readings and retrieve meter readings based on user or all readings.
  *
  * @author razlivinsky
- * @since 29.01.2024
+ * @since 17.02.2024
  */
+@Repository
 public class MeterReadingDaoImpl implements MeterReadingDao {
+    private final JdbcTemplate jdbcTemplate;
+
+    /**
+     * Instantiates a new Meter reading dao.
+     *
+     * @param jdbcTemplate the jdbc template
+     */
+    public MeterReadingDaoImpl(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private final RowMapper<MeterReading> meterReadingRowMapper = (rs, rowNum) -> {
+        String numberMeter = rs.getString("number_meter");
+        LocalDateTime date = rs.getTimestamp("date").toLocalDateTime();
+        String username = rs.getString("user_name");
+        User user = new User(username, "", UserRole.USER);
+        MeterReading meterReading = new MeterReading(numberMeter, date, user);
+        meterReading.setId(rs.getLong("id"));
+        return meterReading;
+    };
+
+    private final RowMapper<MeterReadingDetails> meterReadingDetailsMapper = (rs, rowNum) -> {
+        String type = rs.getString("type");
+        double value = rs.getDouble("value");
+        return new MeterReadingDetails(type, value);
+    };
+
     /**
      * Inserts the provided meter reading and its details into the database.
      *
      * @param meterReading the meter reading object to be inserted
      * @throws DatabaseWriteException if an error occurs while interacting with the database
      */
-    public void insertMeterReading(MeterReading meterReading) throws SQLException {
-        Connection conn = ConnectionManager.getConnection();
-        conn.setAutoCommit(false);
-
-        try (PreparedStatement pstmtMtr = conn.prepareStatement(INSERT_METER_SCHEMA, Statement.RETURN_GENERATED_KEYS)) {
-            pstmtMtr.setString(1, meterReading.getNumberMeter());
-            pstmtMtr.setTimestamp(2, Timestamp.valueOf(meterReading.getDate()));
-            pstmtMtr.setString(3, meterReading.getUser().getName());
-            pstmtMtr.executeUpdate();
-
-            try (ResultSet rs = pstmtMtr.getGeneratedKeys()) {
-                if (rs.next()) {
-                    long mtrId = rs.getLong(1);
-                    for (MeterReadingDetails details : meterReading.getDetailsList()) {
-                        details.setMeterReadingId(mtrId);
-                    }
-                } else {
-                    conn.rollback();
-                    throw new DatabaseWriteException("Inserting meter reading failed, no ID obtained.");
-                }
+    public void insertMeterReading(MeterReading meterReading) {
+        try {
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(INSERT_METER_SCHEMA, new String[]{"id"});
+                ps.setString(1, meterReading.getNumberMeter());
+                ps.setTimestamp(2, Timestamp.valueOf(meterReading.getDate()));
+                ps.setString(3, meterReading.getUser().getName());
+                return ps;
+            }, keyHolder);
+            Number key = keyHolder.getKey();
+            if (key == null) {
+                throw new DatabaseWriteException("Failed to insert meter reading, no ID obtained.");
             }
-            try (PreparedStatement pstmtReading = conn.prepareStatement(INSERT_READING_DATA_SCHEMA)) {
-                for (MeterReadingDetails details : meterReading.getDetailsList()) {
-                    pstmtReading.setLong(1, details.getMeterReadingId());
-                    pstmtReading.setString(2, details.getType());
-                    pstmtReading.setDouble(3, details.getValue());
-                    pstmtReading.executeUpdate();
+            long newMeterReadingId = key.longValue();
+            meterReading.setId(newMeterReadingId);
+            List<MeterReadingDetails> detailsList = meterReading.getDetailsList();
+            jdbcTemplate.batchUpdate(INSERT_READING_DATA_SCHEMA, new BatchPreparedStatementSetter() {
+                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                    MeterReadingDetails details = detailsList.get(i);
+                    ps.setLong(1, newMeterReadingId);
+                    ps.setString(2, details.getType());
+                    ps.setDouble(3, details.getValue());
+                    details.setMeterReadingId(newMeterReadingId);
                 }
-            }
-            conn.commit();
-        } catch (SQLException e) {
-            conn.rollback();
-            throw new DatabaseWriteException("Invalid write " + e.getMessage());
-        } finally {
-            conn.setAutoCommit(true);
-            conn.close();
+                public int getBatchSize() {
+                    return detailsList.size();
+                }
+            });
+        } catch (DataAccessException e) {
+            throw new DatabaseWriteException("Failed to insert meter reading " + e.getMessage());
         }
     }
 
@@ -75,37 +108,21 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      *
      * @param user the user for whom to retrieve the meter readings
      * @return a list of the user's current meter readings
+     * @throws DatabaseReadException if an error occurs while retrieving the data from the database
      */
     public List<MeterReading> selectCurrentMaterReading(User user) {
-        List<MeterReading> meterReadings = new ArrayList<>();
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmtMaxId = conn.prepareStatement(FOUND_MAX_ID);
-             PreparedStatement pstmtAll = conn.prepareStatement(All_READINGS)) {
-
-            pstmtMaxId.setString(1, user.getName());
-            try (ResultSet rsMaxId = pstmtMaxId.executeQuery()) {
-                if (rsMaxId.next()) {
-                    long maxId = rsMaxId.getLong(1);
-                    pstmtAll.setLong(1, maxId);
-                    try (ResultSet rsAll = pstmtAll.executeQuery()) {
-                        while (rsAll.next()) {
-                            MeterReading meterReading = new MeterReading(
-                                    rsAll.getString("number_meter"),
-                                    rsAll.getTimestamp("date").toLocalDateTime(),
-                                    user);
-                            meterReading.setUser(user);
-                            String type = rsAll.getString("type");
-                            double value = rsAll.getDouble("value");
-                            meterReading.addReadingDetails(type, value);
-                            meterReadings.add(meterReading);
-                        }
-                    }
+        try {
+            List<MeterReading> meterReadings = jdbcTemplate.query(FOUND_MAX_ID, meterReadingRowMapper, user.getName());
+            for (MeterReading meterReading : meterReadings) {
+                List<MeterReadingDetails> detailsList = jdbcTemplate.query(All_READINGS, meterReadingDetailsMapper, meterReading.getId());
+                for (MeterReadingDetails details : detailsList) {
+                    meterReading.addReadingDetails(details.getType(), details.getValue());
                 }
             }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+            return meterReadings;
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getName() + e.getMessage());
         }
-        return meterReadings;
     }
 
     /**
@@ -113,123 +130,42 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      *
      * @param user the user for whom to retrieve the meter readings
      * @return a list of meter readings for the specified user
+     * @throws DatabaseReadException if an error occurs while retrieving the data from the database
      */
-    public List<MeterReading> selectByNameUser(User user) {
-        List<MeterReading> meterReadings = new ArrayList<>();
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(SELECT_USER_NAME)) {
-            pstmt.setString(1, user.getName());
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    MeterReading meterReading = new MeterReading(
-                            rs.getString("number_meter"),
-                            rs.getTimestamp("date").toLocalDateTime(),
-                            user);
-                    meterReading.setUser(user);
-                    String type = rs.getString("type");
-                    double value = rs.getDouble("value");
-                    meterReading.addReadingDetails(type, value);
-                    meterReadings.add(meterReading);
+    public List<MeterReading> selectByUserName(User user) {
+        try {
+            List<MeterReading> meterReadings = jdbcTemplate.query(SELECT_USER_NAME, meterReadingRowMapper, user.getName());
+            for (MeterReading meterReading : meterReadings) {
+                List<MeterReadingDetails> detailsList = jdbcTemplate.query(All_READINGS, meterReadingDetailsMapper, meterReading.getId());
+                for (MeterReadingDetails details : detailsList) {
+                    meterReading.addReadingDetails(details.getType(), details.getValue());
                 }
             }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+            return meterReadings;
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getName() + e.getMessage());
         }
-        return meterReadings;
     }
 
     /**
      * Selects all meter readings from the database.
      *
-     * @return list of all meter readings
-     * @throws DatabaseReadException if an error occurs while interacting with the database
+     * @return a list of all meter readings
+     * @throws DatabaseReadException if an error occurs while retrieving the data from the database
      */
-    public List<MeterReading> selectByAllMeterReadings() throws SQLException {
-        List<MeterReading> meterReadings = new ArrayList<>();
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_METER_READINGS)) {
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    String username = rs.getString("user_name");
-                    User user = new User(username, "", UserRole.USER);
-                    MeterReading meterReading = new MeterReading(
-                            rs.getString("number_meter"),
-                            rs.getTimestamp("date").toLocalDateTime(), user);
-                    String type = rs.getString("type");
-                    double value = rs.getDouble("value");
-                    meterReading.addReadingDetails(type, value);
-                    meterReadings.add(meterReading);
+    public List<MeterReading> selectByAllMeterReadings() {
+        try {
+            List<MeterReading> meterReadings = jdbcTemplate.query(SELECT_ALL_METER_READINGS, meterReadingRowMapper);
+            for (MeterReading meterReading : meterReadings) {
+                List<MeterReadingDetails> detailsList = jdbcTemplate.query(All_READINGS, meterReadingDetailsMapper, meterReading.getId());
+                for (MeterReadingDetails details : detailsList) {
+                    meterReading.addReadingDetails(details.getType(), details.getValue());
                 }
             }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
+            return meterReadings;
+        } catch (DataAccessException e) {
+            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + e.getMessage());
         }
-        return meterReadings;
-    }
-
-    /**
-     * Finds the total sum of readings for a specific type and user.
-     *
-     * @param type the type for which to find the sum of readings
-     * @param user the user for whom to find the sum of readings
-     * @return the total sum of readings for the specified type and user
-     */
-    public double findToSumReadingForType(String type, User user) {
-        double sum = 0;
-        try (Connection conn = ConnectionManager.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(SELECT_SUM_VALUE)) {
-            pstmt.setString(1, user.getName());
-            pstmt.setString(2, type);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    double value = rs.getDouble("value");
-                    sum += value;
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
-        }
-        return sum;
-    }
-
-    /**
-     * Finds a meter reading by its ID.
-     *
-     * @param id the ID of the meter reading to find
-     * @return the meter reading with the specified ID
-     * @throws DatabaseReadException if an error occurs while interacting with the database
-     */
-    public MeterReading findById(long id) throws SQLException {
-        MeterReading meterReading = null;
-        try (Connection conn = ConnectionManager.getConnection()) {
-            try (PreparedStatement pstmtMtr = conn.prepareStatement(SELECT_METER)) {
-                pstmtMtr.setLong(1, id);
-                try (ResultSet rsMtr = pstmtMtr.executeQuery()) {
-                    if (rsMtr.next()) {
-                        String username = rsMtr.getString("user_name");
-                        User user = new User(username, "", UserRole.USER);
-                        meterReading = new MeterReading(
-                                rsMtr.getString("number_meter"),
-                                rsMtr.getTimestamp("date").toLocalDateTime(), user);
-                    } else {
-                        return null;
-                    }
-                }
-            }
-            try (PreparedStatement pstmtReading = conn.prepareStatement(SELECT_READING_ID)) {
-                pstmtReading.setLong(1, id);
-                try (ResultSet rsReading = pstmtReading.executeQuery()) {
-                    while (rsReading.next()) {
-                        String type = rsReading.getString("type");
-                        double value = rsReading.getDouble("value");
-                        meterReading.addReadingDetails(type, value);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new DatabaseReadException("Invalid read " + e.getMessage());
-        }
-        return meterReading;
     }
 }
 

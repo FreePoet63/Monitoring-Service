@@ -1,41 +1,28 @@
 package com.ylab.app.test.service;
 
-import com.ylab.app.dbService.connection.ConnectionManager;
 import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
-import com.ylab.app.dbService.dao.impl.UserDaoImpl;
 import com.ylab.app.exception.meterException.MeterReadingException;
 import com.ylab.app.exception.userException.UserValidationException;
-import com.ylab.app.mapper.UserMapper;
-import com.ylab.app.model.*;
+import com.ylab.app.model.MeterReading;
+import com.ylab.app.model.User;
+import com.ylab.app.model.UserRole;
 import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
-import com.ylab.app.model.dto.UserDto;
-import com.ylab.app.service.MeterService;
 import com.ylab.app.service.impl.MeterServiceImpl;
 import com.ylab.app.service.impl.UserServiceImpl;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.sql.DataSource;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,16 +40,7 @@ public class MeterServiceTest {
     private UserServiceImpl userService;
 
     @Mock
-    private UserDaoImpl dao;
-
-    @Mock
     private MeterReadingDaoImpl meterReadingDao;
-
-    @Mock
-    private MeterReadingDto readingDto;
-
-    @Mock
-    private Session session;
 
     @Mock
     private User user;
@@ -105,10 +83,9 @@ public class MeterServiceTest {
     @Test
     @DisplayName("Submit reading with null numberMeter")
     public void submitReadingWithNullNumberMeter() {
-       String numberMeter = null;
+        String numberMeter = null;
         String type = "gas";
         double value = 10.0;
-
         List<MeterReadingDetailsDto> details = List.of(new MeterReadingDetailsDto(type, value));
 
         assertThatThrownBy(() -> meterService.submitReading(user, numberMeter, details))
@@ -129,7 +106,7 @@ public class MeterServiceTest {
                 LocalDateTime.of(2024, 2, 15, 22, 0), expectedUser);
         meterReading1.addReadingDetails("gas", 15.0);
         meterReading1.addReadingDetails("water", 25.0);
-        when(meterReadingDao.selectByNameUser(expectedUser)).thenReturn(List.of(meterReading));
+        when(meterReadingDao.selectByUserName(expectedUser)).thenReturn(List.of(meterReading));
         List<MeterReadingDto> result = meterService.getReadingsByMonth(expectedUser, month);
 
         assertThat(result).isNotNull();

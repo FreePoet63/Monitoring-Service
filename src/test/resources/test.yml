@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    database: db_test
+    username: test_user
+    password: test_pass
+    version:  postgres:latest

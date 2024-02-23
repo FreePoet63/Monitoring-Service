@@ -1,17 +1,17 @@
 package com.ylab.app.service.impl;
 
-import com.ylab.app.aspect.LogExecution;
-import com.ylab.app.dbService.dao.impl.UserDaoImpl;
+import com.ylab.app.dbService.dao.UserDao;
 import com.ylab.app.exception.userException.UserValidationException;
 import com.ylab.app.mapper.UserMapper;
-import com.ylab.app.model.Session;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
 import com.ylab.app.model.dto.UserDto;
 import com.ylab.app.service.UserService;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,145 +21,105 @@ import java.util.stream.Collectors;
  * @author razlivinsky
  * @since 24.01.2024
  */
-@LogExecution
+@Service
 public class UserServiceImpl implements UserService {
-    private UserDaoImpl userDao;
+    private final UserDao userDao;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     /**
-     * Instantiates a new user service with an empty user map.
+     * Instantiates a new User service.
+     *
+     * @param userDao         the user data access object
+     * @param userMapper      the user mapper
+     * @param passwordEncoder the password encoder
      */
-    public UserServiceImpl() {
-        this.userDao = new UserDaoImpl();
+    public UserServiceImpl(UserDao userDao, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+        this.userDao = userDao;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
-     * Registers a new user with the given name, password, and role.
+     * Registers a new user in the system.
      *
-     * @param name     the name of the user
-     * @param password the password for the user
-     * @throws UserValidationException  if the name, password, or role is invalid
-     * @return
+     * @param user the user to be registered
+     * @return the data transfer object for the registered user
+     * @throws SQLException if an SQL exception occurs
      */
-    public UserDto registerUser(String name, String password) {
-        validateFromUserNameAndPassword(name, password);
-        User user = new User(name, password, UserRole.USER);
-        try {
-            userDao.insertUser(user);
-        } catch (SQLException e) {
-            throw new UserValidationException("Problem registration " + e.getMessage());
-        }
-        UserMapper userMapper = UserMapper.INSTANCE;
+    @Override
+    public UserDto registerUser(User user) throws SQLException {
+        validateFromUserNameAndPassword(user);
+        user.setName(user.getName());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(UserRole.ADMIN);
+        userDao.insertUser(user);
         return userMapper.userToUserDto(user);
     }
 
     /**
-     * Logs in a user with the provided name and password.
+     * Checks if the user has the "admin" role.
      *
-     * @param name     the name of the user
-     * @param password the password of the user
-     * @return the logged-in user
-     * @throws UserValidationException  if the name or password is invalid
+     * @param user the user to be checked
+     * @return true if the user has the "admin" role, otherwise false
      */
-    public UserDto loginUser(String name, String password) {
-        validateFromUserNameAndPassword(name, password);
-        try {
-            User user = userDao.findUserByNameAndPassword(name, password);
-            if (user == null) {
-                throw new UserValidationException("Invalid credentials");
-            }
-            Session session = Session.getInstance();
-            session.setUser(user);
-            UserMapper userMapper = UserMapper.INSTANCE;
-            return userMapper.userToUserDto(user);
-        } catch (SQLException e) {
-            throw new UserValidationException("An error occurred while logging in. Please try again. " + e.getMessage());
-        }
-    }
-
-    /**
-     * Checks if the user has admin role.
-     *
-     * @param user the user to check
-     * @return true if the user has admin role, false otherwise
-     * @throws UserValidationException if the user is null
-     */
+    @Override
     public boolean hasRoleAdmin(User user) {
         if (user == null) {
             throw new UserValidationException("Invalid user");
         }
-        if (user.getRole().equals(UserRole.ADMIN)) {
-            return true;
-        } else {
-            return false;
-        }
+        return user.getRole().equals(UserRole.ADMIN);
     }
 
     /**
      * Retrieves a list of all users in the system.
      *
-     * @return the list of all users
+     * @return the list of user data transfer objects
+     * @throws SQLException if an SQL exception occurs
      */
-    public List<UserDto> getAllUsers() {
-        try {
-            List<User> users = new ArrayList<>(userDao.getAllUsers());
-            UserMapper userMapper = UserMapper.INSTANCE;
-
-            return users.stream()
-                    .map(userMapper::userToUserDto)
-                    .collect(Collectors.toList());
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new UserValidationException("An error occurred while retrieving users. Please try again.");
-        }
+    @Override
+    public List<UserDto> getAllUsers() throws SQLException {
+        List<User> users = userDao.getAllUsers();
+        return users.stream()
+                .map(userMapper::userToUserDto)
+                .collect(Collectors.toList());
     }
 
     /**
-     * Validates the username and password for any potential issues.
+     * Retrieves a user by their ID.
      *
-     * @param name     the username to be validated
-     * @param password the password to be validated
-     * @throws UserValidationException if the username or password is invalid
+     * @param id the ID of the user to retrieve
+     * @return the data transfer object for the retrieved user
      */
-    private void validateFromUserNameAndPassword(String name, String password) {
-        if (name == null || name.isEmpty()) {
-            throw new UserValidationException("Invalid credentials");
-        }
-        if (password == null || password.isEmpty()) {
-            throw new UserValidationException("Invalid credentials");
-        }
-    }
-
-    /**
-     * Finds a user in the system by their ID.
-     *
-     * @param id the ID of the user to find
-     * @return the user with the specified ID, or null if no such user is found
-     * @throws UserValidationException if the user ID is invalid
-     */
+    @Override
     public UserDto getUserById(long id) {
-        try {
-            User user = userDao.findUserById(id);
-            UserMapper userMapper = UserMapper.INSTANCE;
-            return userMapper.userToUserDto(user);
-        } catch (SQLException e) {
-            throw new UserValidationException("An error occurred while finding user by ID. " + e.getMessage());
-        }
+        User user = userDao.findUserById(id);
+        return userMapper.userToUserDto(user);
     }
 
     /**
-     * Finds a user in the system by their ID.
+     * Retrieves a user by their login credentials.
      *
-     * @param login the ID of the user to find
-     * @return the user with the specified ID, or null if no such user is found
-     * @throws UserValidationException if the user login is invalid
+     * @param login the login credentials of the user to retrieve
+     * @return the data transfer object for the retrieved user
+     * @throws UserValidationException if the credentials are invalid
      */
+    @Override
     public UserDto getUserByLogin(String login) {
+        User user = userDao.getUserByLogin(login);
         try {
-            User user = userDao.getUserByLogin(login);
-            UserMapper userMapper = UserMapper.INSTANCE;
+            if (user == null) {
+                throw new UserValidationException("Invalid credentials");
+            }
             return userMapper.userToUserDto(user);
-        } catch (SQLException e) {
-            throw new UserValidationException("An error occurred while finding user by ID. " + e.getMessage());
+        } catch (DataAccessException e) {
+            throw new UserValidationException("Problem registration " + e.getMessage());
+        }
+    }
+
+    private void validateFromUserNameAndPassword(User user) {
+        if (user.getName() == null || user.getName().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
+            throw new UserValidationException("Invalid credentials");
         }
     }
 }

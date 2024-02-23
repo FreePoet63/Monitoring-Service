@@ -1,8 +1,6 @@
 package com.ylab.app.service.impl;
 
-import com.ylab.app.aspect.LogExecution;
 import com.ylab.app.dbService.dao.MeterReadingDao;
-import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
 import com.ylab.app.exception.meterException.MeterReadingException;
 import com.ylab.app.exception.userException.UserValidationException;
 import com.ylab.app.mapper.MeterReadingMapper;
@@ -11,7 +9,8 @@ import com.ylab.app.model.User;
 import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
 import com.ylab.app.service.MeterService;
-import com.ylab.app.service.UserService;
+import org.springframework.dao.DataAccessException;
+import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -26,28 +25,33 @@ import java.util.stream.Collectors;
  * @author razlivinsky
  * @since 24.01.2024
  */
-@LogExecution
+@Service
 public class MeterServiceImpl implements MeterService {
-    private UserService userService;
-    private MeterReadingDao readingDao;
-    private MeterReadingMapper meterReadingMapper;
+    private final UserServiceImpl userService;
+    private final MeterReadingDao readingDao;
+    private final MeterReadingMapper meterReadingMapper;
 
     /**
      * Instantiates a new Meter service.
+     *
+     * @param userService        the user service
+     * @param readingDao         the meter reading data access object
+     * @param meterReadingMapper the meter reading mapper
      */
-    public MeterServiceImpl() {
-        this.userService = new UserServiceImpl();
-        this.meterReadingMapper = MeterReadingMapper.INSTANCE;
-        this.readingDao = new MeterReadingDaoImpl();
+    public MeterServiceImpl(UserServiceImpl userService, MeterReadingDao readingDao, MeterReadingMapper meterReadingMapper) {
+        this.userService = userService;
+        this.readingDao = readingDao;
+        this.meterReadingMapper = meterReadingMapper;
     }
 
     /**
-     * Gets the current readings for the specified user.
+     * Retrieves the current meter readings for a specific user.
      *
-     * @param user the user for whom the current readings are retrieved
-     * @return the list of current readings
+     * @param user the user for whom to retrieve the current meter readings
+     * @return the list of current meter readings in data transfer object form
      * @throws UserValidationException if the user is invalid
      */
+    @Override
     public List<MeterReadingDto> getCurrentReadings(User user) {
         if (user == null) {
             throw new UserValidationException("Invalid user");
@@ -59,18 +63,19 @@ public class MeterServiceImpl implements MeterService {
     }
 
     /**
-     * Submits a new reading for the specified user and meter.
+     * Submits a new meter reading for a specific user.
      *
-     * @param user        the user submitting the reading
-     * @param numberMeter the meter number for the readings
-     * @param  readings list the values of the reading
-     * @throws MeterReadingException if the meter number, type, or value is invalid
+     * @param user     the user submitting the meter reading
+     * @param numberMeter the meter number for the reading
+     * @param readings the details of the meter reading
+     * @return the submitted meter reading in data transfer object form
+     * @throws MeterReadingException if the meter number is invalid or if there is a failure in inserting the reading
      */
+    @Override
     public MeterReadingDto submitReading(User user, String numberMeter, List<MeterReadingDetailsDto> readings) {
-        if (numberMeter == null || numberMeter.isEmpty() || numberMeter.contains(" ")) {
+        if (numberMeter == null || numberMeter.isEmpty()) {
             throw new MeterReadingException("Invalid numberMeter");
         }
-
         try {
             MeterReadingDto meterReadingDto = new MeterReadingDto();
             meterReadingDto.setNumberMeter(numberMeter);
@@ -82,25 +87,24 @@ public class MeterServiceImpl implements MeterService {
                 detailsDtoList.add(readingDto);
             }
             meterReadingDto.setDetailsList(detailsDtoList);
-
             MeterReading meterReading = meterReadingMapper.meterReadingDtoToMeterReading(meterReadingDto);
             readingDao.insertMeterReading(meterReading);
-
             return meterReadingMapper.meterReadingToMeterReadingDto(meterReading);
-        } catch (SQLException e) {
-            throw new MeterReadingException("Invalid date " + e.getMessage());
+        } catch (DataAccessException e) {
+            throw new MeterReadingException("Failed to insert meter reading", e);
         }
     }
 
     /**
-     * Gets the readings for the specified user and month.
+     * Retrieves the meter readings for a specific user in a given month.
      *
-     * @param user  the user for whom the readings are retrieved
-     * @param month the month for which readings are retrieved
-     * @return the list of readings for the specified month
-     * @throws UserValidationException if the user is invalid or the month is out of range
-     * @throws MeterReadingException if the user is invalid or the month is out of range
+     * @param user  the user for whom to retrieve the meter readings
+     * @param month the month for which to retrieve the meter readings
+     * @return the list of meter readings for the specified user and month in data transfer object form
+     * @throws UserValidationException if the user is invalid
+     * @throws MeterReadingException  if the month is invalid
      */
+    @Override
     public List<MeterReadingDto> getReadingsByMonth(User user, int month) {
         if (user == null) {
             throw new UserValidationException("Invalid user");
@@ -108,7 +112,7 @@ public class MeterServiceImpl implements MeterService {
         if (month < Month.JANUARY.getValue() || month > Month.DECEMBER.getValue()) {
             throw new MeterReadingException("Invalid month");
         }
-        List<MeterReading> userReadings = readingDao.selectByNameUser(user);
+        List<MeterReading> userReadings = readingDao.selectByUserName(user);
         return userReadings.stream()
                 .map(meterReadingMapper::meterReadingToMeterReadingDto)
                 .filter(readingDto -> readingDto.getDate().getMonthValue() == month)
@@ -116,43 +120,43 @@ public class MeterServiceImpl implements MeterService {
     }
 
     /**
-     * Gets the readings history for the specified user.
+     * Retrieves the complete meter reading history for a specific user.
      *
-     * @param user the user for whom the readings history is retrieved
-     * @return the list of readings history for the specified user
+     * @param user the user for whom to retrieve the meter reading history
+     * @return the complete meter reading history for the specified user in data transfer object form
      * @throws UserValidationException if the user is invalid
      */
+    @Override
     public List<MeterReadingDto> getReadingsHistory(User user) {
         if (user == null) {
             throw new UserValidationException("Invalid user");
         }
-        List<MeterReading> userReadings = readingDao.selectByNameUser(user);
+        List<MeterReading> userReadings = readingDao.selectByUserName(user);
         return userReadings.stream()
                 .map(meterReadingMapper::meterReadingToMeterReadingDto)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Gets the readings history for all users (for admin user).
+     * Retrieves the complete meter reading history for all users (accessible to admin users only).
      *
-     * @param adminUser the admin user retrieving the readings history
-     * @return the list of all readings history
+     * @param adminUser the admin user requesting the complete meter reading history
+     * @return the complete meter reading history for all users in data transfer object form
      * @throws UserValidationException if the admin user is invalid or unauthorized
-     * @throws MeterReadingException if the admin user is invalid or unauthorized
+     * @throws MeterReadingException  if there is a failure in retrieving the complete meter reading history
      */
+    @Override
     public List<MeterReadingDto> getAllReadingsHistory(User adminUser) {
         if (adminUser == null || !userService.hasRoleAdmin(adminUser)) {
             throw new UserValidationException("Invalid or unauthorized user");
         }
-
         try {
             List<MeterReading> allMeterReadings = readingDao.selectByAllMeterReadings();
             return allMeterReadings.stream()
                     .map(meterReadingMapper::meterReadingToMeterReadingDto)
                     .collect(Collectors.toList());
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new MeterReadingException("Invalid date " + e.getMessage());
+        } catch (DataAccessException | SQLException e) {
+            throw new MeterReadingException("Failed to retrieve all meter readings", e);
         }
     }
 }

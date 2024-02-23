@@ -5,26 +5,21 @@ import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
-import org.mapstruct.factory.Mappers;
 
 /**
- * MeterReadingDetailsMapper class
+ * MeterReadingDetailsMapper interface for mapping between MeterReadingDetails and MeterReadingDetailsDto objects.
+ * This interface is used as a component in a Spring application and is responsible for mapping entities to DTOs and vice versa.
  *
  * @author HP
  * @since 09.02.2024
  */
-@Mapper
+@Mapper(componentModel = "spring")
 public interface MeterReadingDetailsMapper {
     /**
-     * The constant INSTANCE.
-     */
-    MeterReadingDetailsMapper INSTANCE = Mappers.getMapper(MeterReadingDetailsMapper.class);
-
-    /**
-     * Meter reading details to meter reading details dto meter reading details dto.
+     * Maps a MeterReadingDetails object to a MeterReadingDetailsDto object.
      *
-     * @param meterReadingDetails the meter reading details
-     * @return the meter reading details dto
+     * @param meterReadingDetails the MeterReadingDetails object to map
+     * @return the mapped MeterReadingDetailsDto object
      */
     @Mappings({
             @Mapping(target = "meterReadingId", source = "meterReadingId"),
@@ -34,10 +29,10 @@ public interface MeterReadingDetailsMapper {
     MeterReadingDetailsDto meterReadingDetailsToMeterReadingDetailsDto(MeterReadingDetails meterReadingDetails);
 
     /**
-     * Meter reading details dto to meter reading details meter reading details.
+     * Maps a MeterReadingDetailsDto object to a MeterReadingDetails object.
      *
-     * @param meterReadingDetailsDto the meter reading details dto
-     * @return the meter reading details
+     * @param meterReadingDetailsDto the MeterReadingDetailsDto object to map
+     * @return the mapped MeterReadingDetails object
      */
     @Mappings({
             @Mapping(target = "meterReadingId", source = "meterReadingId"),
