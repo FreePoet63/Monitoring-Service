@@ -1,13 +1,10 @@
 package com.ylab.app.in.controllers;
 
+import com.ylab.app.aspect.EnableLogging;
 import com.ylab.app.model.User;
 import com.ylab.app.model.dto.UserDto;
 import com.ylab.app.service.UserService;
-import com.ylab.app.service.impl.UserServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,16 +20,17 @@ import java.util.List;
  * @Author razlivinsky
  * @since 14.02.2024
  */
+@EnableLogging
 @RestController
 public class UserController {
-    private final UserServiceImpl userService;
+    private final UserService userService;
 
     /**
      * Instantiates a new User controller.
      *
      * @param userService the user service
      */
-    public UserController(UserServiceImpl userService) {
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
@@ -49,7 +47,6 @@ public class UserController {
         UserDto userDto = userService.registerUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(userDto);
     }
-
 
     /**
      * Retrieves a user by their ID.

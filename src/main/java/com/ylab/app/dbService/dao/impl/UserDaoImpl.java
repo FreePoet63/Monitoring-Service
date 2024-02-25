@@ -42,7 +42,7 @@ public class UserDaoImpl implements UserDao {
 
     private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
         UserRole role = UserRole.fromString(rs.getString("role"));
-        User user = new User(rs.getString("name"), rs.getString("password"), role);
+        User user = new User(rs.getString("username"), rs.getString("password"), role);
         user.setId(rs.getLong("id"));
         return user;
     };
@@ -59,7 +59,7 @@ public class UserDaoImpl implements UserDao {
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbcTemplate.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(INSERT_USER_SCHEMA, new String[] {"id"});
-                ps.setString(1, user.getName());
+                ps.setString(1, user.getUsername());
                 ps.setString(2, user.getPassword());
                 ps.setString(3, user.getRole().name());
                 return ps;
@@ -103,7 +103,6 @@ public class UserDaoImpl implements UserDao {
             throw new DatabaseReadException("Failed to retrieve user by id", e);
         }
     }
-
 
     /**
      * Finds a user by their login name.

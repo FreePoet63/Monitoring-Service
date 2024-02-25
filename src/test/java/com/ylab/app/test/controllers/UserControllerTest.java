@@ -12,15 +12,19 @@ import com.ylab.app.mapper.UserMapper;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
 import com.ylab.app.model.dto.UserDto;
-import com.ylab.app.service.impl.UserServiceImpl;
+import com.ylab.app.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -30,17 +34,19 @@ import java.util.Arrays;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SpringBootTest
 public class UserControllerTest {
+    @InjectMocks
+    private UserController userController;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Mock
     private UserMapper userMapper;
 
     @Mock
-    private UserServiceImpl userService;
-
-    @InjectMocks
-    private UserController userController;
+    private UserService userService;
 
     @Before
     public void setUp() {

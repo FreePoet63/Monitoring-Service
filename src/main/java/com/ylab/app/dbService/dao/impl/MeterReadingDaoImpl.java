@@ -7,7 +7,6 @@ import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.MeterReadingDetails;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -76,7 +75,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
                 PreparedStatement ps = connection.prepareStatement(INSERT_METER_SCHEMA, new String[]{"id"});
                 ps.setString(1, meterReading.getNumberMeter());
                 ps.setTimestamp(2, Timestamp.valueOf(meterReading.getDate()));
-                ps.setString(3, meterReading.getUser().getName());
+                ps.setString(3, meterReading.getUser().getUsername());
                 return ps;
             }, keyHolder);
             Number key = keyHolder.getKey();
@@ -112,7 +111,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      */
     public List<MeterReading> selectCurrentMaterReading(User user) {
         try {
-            List<MeterReading> meterReadings = jdbcTemplate.query(FOUND_MAX_ID, meterReadingRowMapper, user.getName());
+            List<MeterReading> meterReadings = jdbcTemplate.query(FOUND_MAX_ID, meterReadingRowMapper, user.getUsername());
             for (MeterReading meterReading : meterReadings) {
                 List<MeterReadingDetails> detailsList = jdbcTemplate.query(All_READINGS, meterReadingDetailsMapper, meterReading.getId());
                 for (MeterReadingDetails details : detailsList) {
@@ -121,7 +120,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
             }
             return meterReadings;
         } catch (DataAccessException e) {
-            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getName() + e.getMessage());
+            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getUsername() + e.getMessage());
         }
     }
 
@@ -134,7 +133,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
      */
     public List<MeterReading> selectByUserName(User user) {
         try {
-            List<MeterReading> meterReadings = jdbcTemplate.query(SELECT_USER_NAME, meterReadingRowMapper, user.getName());
+            List<MeterReading> meterReadings = jdbcTemplate.query(SELECT_USER_NAME, meterReadingRowMapper, user.getUsername());
             for (MeterReading meterReading : meterReadings) {
                 List<MeterReadingDetails> detailsList = jdbcTemplate.query(All_READINGS, meterReadingDetailsMapper, meterReading.getId());
                 for (MeterReadingDetails details : detailsList) {
@@ -143,7 +142,7 @@ public class MeterReadingDaoImpl implements MeterReadingDao {
             }
             return meterReadings;
         } catch (DataAccessException e) {
-            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getName() + e.getMessage());
+            throw new DatabaseReadException("Failed to retrieve current meter readings for user " + user.getUsername() + e.getMessage());
         }
     }
 

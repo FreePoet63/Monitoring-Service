@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLException;
 
@@ -17,7 +18,7 @@ import java.sql.SQLException;
  * @author razlivinsky
  * @since 16.02.2024
  */
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
     /**
      * Handles validation exceptions and returns a response entity with a bad request status code.

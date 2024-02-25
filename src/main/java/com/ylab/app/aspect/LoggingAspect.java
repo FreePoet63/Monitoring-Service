@@ -1,6 +1,6 @@
 package com.ylab.app.aspect;
 
-import com.ylab.app.config.DataSourceConfig;
+import com.ylab.app.dbService.dao.AuditDao;
 import com.ylab.app.dbService.dao.impl.AuditDaoImpl;
 import com.ylab.app.model.Audit;
 import org.aspectj.lang.JoinPoint;
@@ -9,7 +9,6 @@ import org.aspectj.lang.annotation.Before;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -26,6 +25,14 @@ import java.util.List;
 @Aspect
 @Component
 public class LoggingAspect {
+    public final AuditDao auditDao;
+    public final JdbcTemplate jdbcTemplate;
+
+    public LoggingAspect(JdbcTemplate jdbcTemplate) {
+        this.auditDao = new AuditDaoImpl(jdbcTemplate);
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
     /**
      * Logs method calls before their execution.
      *
@@ -46,12 +53,8 @@ public class LoggingAspect {
                 + "Signature: " + signature + System.lineSeparator()
                 + "Arguments: " + Arrays.toString(args);
         Audit audit = new Audit(result);
-        DataSourceConfig config = new DataSourceConfig();
-        DataSource dataSource = config.dataSource();
-        JdbcTemplate template = new JdbcTemplate(dataSource);
-        AuditDaoImpl dao = new AuditDaoImpl(template);
-        dao.sendMessage(audit);
-        List<Audit> listAudit = dao.getMessage();
-        System.out.println(listAudit);
+        auditDao.sendMessage(audit);
+        List<Audit> auditList = auditDao.getMessage();
+        System.out.println(auditList);
     }
 }

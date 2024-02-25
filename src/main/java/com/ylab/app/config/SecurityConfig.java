@@ -1,6 +1,6 @@
 package com.ylab.app.config;
 
-import com.ylab.app.service.UserDetailsServiceImpl;
+import com.ylab.app.service.CustomDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,9 +26,9 @@ import java.util.Collections;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final UserDetailsServiceImpl userService;
+    private final CustomDetailsService userService;
 
-    public SecurityConfig(UserDetailsServiceImpl userService) {
+    public SecurityConfig(CustomDetailsService userService) {
         this.userService = userService;
     }
 
