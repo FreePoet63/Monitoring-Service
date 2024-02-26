@@ -15,7 +15,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @Configuration
 @EnableAspectJAutoProxy
-@EnableLogging
 @ComponentScan("com.ylab.app")
 public class AppConfig {
 }
