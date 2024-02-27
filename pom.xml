@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.4</version>
+        <version>3.2.0</version>
         <relativePath/>
     </parent>
 
@@ -23,7 +23,6 @@
         <liquibase.version>4.24.0</liquibase.version>
         <postgresql.version>42.6.0</postgresql.version>
         <testcontainers.version>1.19.1</testcontainers.version>
-        <jackson.version>2.12.4</jackson.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <springdoc-openapi.version>2.0.4</springdoc-openapi.version>
         <aspectj.version>1.9.7</aspectj.version>
@@ -66,16 +65,6 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>${aspectj.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mapstruct</groupId>

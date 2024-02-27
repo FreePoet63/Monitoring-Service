@@ -3,12 +3,12 @@ package com.ylab.app.config;
 import com.ylab.app.service.CustomDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -64,27 +64,20 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests((authz) -> {
-                    try {
-                        authz
-                                .requestMatchers("/login*", "/users/*")
-                                .permitAll()
-                                .requestMatchers(HttpMethod.POST, "/register")
-                                .permitAll()
-                                .anyRequest()
-                                .authenticated();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .formLogin()
-                .loginProcessingUrl("/login")
-                .usernameParameter("user_name")
-                .passwordParameter("password")
-                .and()
-                .csrf()
-                .disable()
-                .sessionManagement();
+        http
+                .authorizeHttpRequests((authz) -> authz
+                        .requestMatchers("/login*", "/users/*", "/register").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginProcessingUrl("/login")
+                        .usernameParameter("user_name")
+                        .passwordParameter("password"))
+                .csrf(csfr -> csfr.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .invalidSessionUrl("/login?invalid-session=true"));
+
         return http.build();
     }
 
