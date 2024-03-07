@@ -2,18 +2,29 @@
 
 ## Краткое описание
 В проект добавлены aspectj, servlets.
+
 Теперь приложение использует клиент - серверную архитектуру для отправки запросов Monitoring - Service.
+
 Audit логгирует все методы Servlets и Services.
+
 Endpoints:
+
 User:
+
 POST http://lovalhost::8080/users/register
+
      {
          "name": "name",
          "password": "password"
       }
-GET  http://lovalhost::8080/users/login?name={name}&password={password}
+      
+GET  http://lovalhost::8080/users/login?
+name={name}&password={password}
+
 GET  http://lovalhost::8080/users/{id}
+
 GET  http://lovalhost::8080/users
+
 Meter readings:
 Только для авторизированных пользователей, для отправки запросов нужеа авторизация
 POST: http://lovalhost::8080/meter
