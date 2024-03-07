@@ -1,6 +1,5 @@
-package com.ylab.app.config;
+package com.ylab.config;
 
-import com.ylab.app.aspect.EnableLogging;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -15,6 +14,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @Configuration
 @EnableAspectJAutoProxy
-@ComponentScan("com.ylab.app")
+@ComponentScan("com.ylab")
 public class AppConfig {
 }

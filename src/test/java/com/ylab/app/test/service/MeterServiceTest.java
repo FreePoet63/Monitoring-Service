@@ -3,7 +3,7 @@ package com.ylab.app.test.service;
 import com.ylab.app.dbService.dao.MeterReadingDao;
 import com.ylab.app.exception.meterException.MeterReadingException;
 import com.ylab.app.exception.userException.UserValidationException;
-import com.ylab.app.in.StartApplication;
+import com.ylab.app.StartApplication;
 import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;

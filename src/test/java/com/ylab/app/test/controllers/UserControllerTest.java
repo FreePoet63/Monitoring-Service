@@ -7,7 +7,7 @@ package com.ylab.app.test.controllers;
  * @since 18.02.2024
  */
 
-import com.ylab.app.in.controllers.UserController;
+import com.ylab.app.controllers.UserController;
 import com.ylab.app.mapper.UserMapper;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
@@ -16,7 +16,6 @@ import com.ylab.app.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -24,7 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;

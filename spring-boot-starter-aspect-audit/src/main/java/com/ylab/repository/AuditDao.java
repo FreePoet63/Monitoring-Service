@@ -1,6 +1,6 @@
-package com.ylab.app.dbService.dao;
+package com.ylab.repository;
 
-import com.ylab.app.model.Audit;
+import com.ylab.model.Audit;
 
 import java.util.List;
 
