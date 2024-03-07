@@ -2,13 +2,9 @@
 
 ## Краткое описание
 В проект добавлены aspectj, servlets.
-
 Теперь приложение использует клиент - серверную архитектуру для отправки запросов Monitoring - Service.
-
 Audit логгирует все методы Servlets и Services.
-
 Endpoints:
-
 User:
 
 POST http://localhost::8080/users/register
@@ -18,7 +14,7 @@ POST http://localhost::8080/users/register
          "password": "password"
       }
       
-GET  http://localhost::8080/users/login? name={name}&password={password}
+GET  http://localhost::8080/users/login?name={name}&password={password}
 
 GET  http://localhost::8080/users/{id}
 
@@ -41,11 +37,8 @@ POST: http://localhost::8080/meter
       }
       
 GET   http://localhost::8080/meter?action=current
-
 GET   http://localhost::8080/meter?action=month&month{number}
-
 GET   http://localhost::8080/meter?action=hystory
-
 GET   http://localhost::8080/meter?action=all
 
 Проект покрыт тестами на 76 ппоцентов
