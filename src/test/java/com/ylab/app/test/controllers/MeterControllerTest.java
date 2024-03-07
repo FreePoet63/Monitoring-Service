@@ -1,12 +1,10 @@
 package com.ylab.app.test.controllers;
 
-import com.ylab.app.in.controllers.MeterController;
-import com.ylab.app.mapper.UserMapper;
+import com.ylab.app.controllers.MeterController;
 import com.ylab.app.model.User;
 import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
 import com.ylab.app.service.impl.MeterServiceImpl;
-import com.ylab.app.service.impl.UserServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;

@@ -1,5 +1,6 @@
-package com.ylab.app.aspect;
+package com.ylab.aspect;
 
+import com.ylab.config.LoggingAspectConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
@@ -27,6 +28,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(LoggingAspectAnnotation.class)
+@Import(LoggingAspectConfiguration.class)
 public @interface EnableLogging {
 }

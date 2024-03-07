@@ -1,8 +1,8 @@
-package com.ylab.app.aspect;
+package com.ylab.aspect;
 
-import com.ylab.app.dbService.dao.AuditDao;
-import com.ylab.app.dbService.dao.impl.AuditDaoImpl;
-import com.ylab.app.model.Audit;
+import com.ylab.model.Audit;
+import com.ylab.repository.AuditDao;
+import com.ylab.repository.impl.AuditDaoImpl;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * LoggingAspect class is responsible for logging method calls in the application.
- *
+ * <p>
  * This aspect intercepts method calls and logs information such as method name, signature, and arguments.
  *
  * @author razlivinsky
@@ -26,11 +26,14 @@ import java.util.List;
 @Component
 public class LoggingAspect {
     public final AuditDao auditDao;
-    public final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Instantiates a new Logging aspect.
+     *
+     * @param jdbcTemplate the jdbc template used for database operations
+     */
     public LoggingAspect(JdbcTemplate jdbcTemplate) {
         this.auditDao = new AuditDaoImpl(jdbcTemplate);
-        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**

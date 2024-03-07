@@ -1,4 +1,4 @@
-package com.ylab.app.in.controllers;
+package com.ylab.app.controllers;
 
 import com.ylab.app.exception.meterException.MeterReadingException;
 import com.ylab.app.exception.userException.UserValidationException;

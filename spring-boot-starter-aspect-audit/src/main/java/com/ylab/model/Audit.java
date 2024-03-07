@@ -1,4 +1,4 @@
-package com.ylab.app.model;
+package com.ylab.model;
 
 /**
  * Audit class representing an audit entry.

@@ -18,16 +18,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomDetailsService implements UserDetailsService {
     private final UserDao userDao;
-    private final JdbcTemplate jdbcTemplate;
 
     /**
      * Constructs a new UserDetailsServiceImpl with the specified userDao.
      *
      * @param  jdbcTemplate the jdbcTemplate data access object
      */
-    public CustomDetailsService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.userDao = new UserDaoImpl(jdbcTemplate);
+    public CustomDetailsService(UserDao userDao) {
+        this.userDao = userDao;
     }
 
     @Override

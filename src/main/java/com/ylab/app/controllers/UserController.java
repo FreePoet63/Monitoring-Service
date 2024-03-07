@@ -1,9 +1,9 @@
-package com.ylab.app.in.controllers;
+package com.ylab.app.controllers;
 
-import com.ylab.app.aspect.EnableLogging;
 import com.ylab.app.model.User;
 import com.ylab.app.model.dto.UserDto;
 import com.ylab.app.service.UserService;
+import com.ylab.aspect.EnableLogging;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
