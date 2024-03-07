@@ -9,6 +9,7 @@ import com.ylab.app.model.User;
 import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
 import com.ylab.app.service.MeterService;
+import com.ylab.app.service.UserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class MeterServiceImpl implements MeterService {
-    private final UserServiceImpl userService;
+    private final UserService userService;
     private final MeterReadingDao readingDao;
     private final MeterReadingMapper meterReadingMapper;
 
@@ -38,7 +39,7 @@ public class MeterServiceImpl implements MeterService {
      * @param readingDao         the meter reading data access object
      * @param meterReadingMapper the meter reading mapper
      */
-    public MeterServiceImpl(UserServiceImpl userService, MeterReadingDao readingDao, MeterReadingMapper meterReadingMapper) {
+    public MeterServiceImpl(UserService userService, MeterReadingDao readingDao, MeterReadingMapper meterReadingMapper) {
         this.userService = userService;
         this.readingDao = readingDao;
         this.meterReadingMapper = meterReadingMapper;

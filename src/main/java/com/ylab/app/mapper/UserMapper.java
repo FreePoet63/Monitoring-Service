@@ -20,7 +20,7 @@ public interface UserMapper {
      * @return the mapped UserDto object
      */
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "name", target = "name")
+    @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "role", target = "role")
     UserDto userToUserDto(User user);
@@ -32,7 +32,7 @@ public interface UserMapper {
      * @return the mapped User object
      */
     @Mapping(source = "id", target = "id")
-    @Mapping(source = "name", target = "name")
+    @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "role", target = "role")
     User userDtoToUser(UserDto userDto);

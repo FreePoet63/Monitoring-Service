@@ -50,9 +50,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto registerUser(User user) throws SQLException {
         validateFromUserNameAndPassword(user);
-        user.setName(user.getName());
+        user.setUsername(user.getUsername());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(UserRole.ADMIN);
+        user.setRole(UserRole.USER);
         userDao.insertUser(user);
         return userMapper.userToUserDto(user);
     }
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateFromUserNameAndPassword(User user) {
-        if (user.getName() == null || user.getName().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
+        if (user.getUsername() == null || user.getUsername().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
             throw new UserValidationException("Invalid credentials");
         }
     }

@@ -8,7 +8,7 @@ package com.ylab.app.model.dto;
  */
 public class UserDto {
     private Long id;
-    private String name;
+    private String username;
     private String password;
     private String role;
 
@@ -40,8 +40,8 @@ public class UserDto {
      *
      * @return the name
      */
-    public String getName() {
-        return name;
+    public String getUsername() {
+        return username;
     }
 
     /**
@@ -49,8 +49,8 @@ public class UserDto {
      *
      * @param name the name
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setUsername(String name) {
+        this.username = name;
     }
 
     /**
@@ -92,7 +92,7 @@ public class UserDto {
     @Override
     public String toString() {
         return "UserDto{" +
-                "name=" + name + '\'' +
+                "name=" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", role='" + role + '\'' +
                 '}';

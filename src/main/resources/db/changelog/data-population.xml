@@ -3,17 +3,17 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
     <changeSet id="populateTableUsers" author="razlivinsky">
         <insert tableName="usr" schemaName="my_schema">
-            <column name="name" value="Nata"/>
+            <column name="username" value="Nata"/>
             <column name="password" value="pass"/>
             <column name="role" value="user"/>
         </insert>
         <insert tableName="usr" schemaName="my_schema">
-            <column name="name" value="Olya"/>
+            <column name="username" value="Olya"/>
             <column name="password" value="test"/>
             <column name="role" value="user"/>
         </insert>
         <insert tableName="usr" schemaName="my_schema">
-            <column name="name" value="Venya"/>
+            <column name="username" value="Venya"/>
             <column name="password" value="ylab"/>
             <column name="role" value="admin"/>
         </insert>

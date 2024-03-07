@@ -3,11 +3,10 @@ package com.ylab.app.test.controllers;
 import com.ylab.app.in.controllers.MeterController;
 import com.ylab.app.mapper.UserMapper;
 import com.ylab.app.model.User;
+import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
-import com.ylab.app.model.dto.UserDto;
 import com.ylab.app.service.impl.MeterServiceImpl;
 import com.ylab.app.service.impl.UserServiceImpl;
-import com.ylab.app.test.util.TestSecurityConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -16,17 +15,18 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -35,122 +35,108 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * MeterControllerTest class
  *
- * @author HP
+ * @author razlivinsky
  * @since 18.02.2024
  */
-@ContextConfiguration(classes = { TestSecurityConfig.class })
-@WebAppConfiguration
+@SpringBootTest
 public class MeterControllerTest {
-    private MockMvc mockMvc;
+    @InjectMocks
+    private MeterController meterController;
 
     @Autowired
-    private WebApplicationContext context;
+    private MockMvc mockMvc;
 
     @Mock
     private MeterServiceImpl meterService;
 
-    @Mock
-    private UserServiceImpl userService;
-
-    @Mock
-    private UserMapper userMapper;
-
-    @InjectMocks
-    private MeterController meterController;
+    private MeterReadingDto meterReadingDto1;
+    private MeterReadingDto meterReadingDto2;
+    private List<MeterReadingDto> meterReadingDtoList;
+    private MeterReadingDetailsDto meterReadingDetailsDto1;
+    private MeterReadingDetailsDto meterReadingDetailsDto2;
+    private List<MeterReadingDetailsDto> meterReadingDetailsDtoList;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders
-                .webAppContextSetup(context)
-                .apply(springSecurity())
-                .build();
+        mockMvc = MockMvcBuilders.standaloneSetup(meterController).build();
+
+        meterReadingDetailsDto1 = new MeterReadingDetailsDto();
+        meterReadingDetailsDto1.setType("Electricity");
+        meterReadingDetailsDto1.setValue(100.0);
+        meterReadingDetailsDto2 = new MeterReadingDetailsDto();
+        meterReadingDetailsDto2.setType("Gas");
+        meterReadingDetailsDto2.setValue(200.7);
+        meterReadingDetailsDtoList = Arrays.asList(meterReadingDetailsDto1, meterReadingDetailsDto2);
+
+        meterReadingDto1 = new MeterReadingDto();
+        meterReadingDto1.setNumberMeter("123456789");
+        meterReadingDto1.setDetailsList(meterReadingDetailsDtoList);
+        meterReadingDto2 = new MeterReadingDto();
+        meterReadingDto2.setNumberMeter("987654321");
+        meterReadingDto2.setDetailsList(meterReadingDetailsDtoList);
+        meterReadingDtoList = Arrays.asList(meterReadingDto1, meterReadingDto2);
     }
 
     @Test
-    @DisplayName("Get current meter readings")
+    @WithMockUser(username = "test", password = "test", roles = "USER")
+    @DisplayName("getCurrentMeterReadings returns a list of current meter readings for the authenticated user when successful")
     public void testGetCurrentMeterReadings() throws Exception {
-        Mockito.when(userService.getUserByLogin("testUser")).thenReturn(new UserDto());
-        Mockito.when(userMapper.userDtoToUser(any(UserDto.class))).thenReturn(new User());
-        Mockito.when(meterService.getCurrentReadings(any(User.class))).thenReturn(Arrays.asList(new MeterReadingDto()));
+        when(meterService.getCurrentReadings(any(User.class))).thenReturn(meterReadingDtoList);
 
         mockMvc.perform(get("/meter-readings/current")
-                        .with(request -> {
-                            request.setRemoteUser("testUser");
-                            return request;
-                        })
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    @DisplayName("Submit meter reading")
+    @WithMockUser(username = "test", password = "test", roles = "USER")
+    @DisplayName("submitMeterReading creates a new meter reading for the authenticated user when successful")
     public void testSubmitMeterReading() throws Exception {
-        Mockito.when(userService.getUserByLogin("testUser")).thenReturn(new UserDto());
-        Mockito.when(userMapper.userDtoToUser(any(UserDto.class))).thenReturn(new User());
-        Mockito.when(meterService.submitReading(any(User.class), anyString(), anyList())).thenReturn(new MeterReadingDto());
+        when(meterService.submitReading(any(User.class), anyString(),
+                any(List.class))).thenReturn(meterReadingDto1);
 
         mockMvc.perform(post("/meter-readings/submit")
-                        .with(request -> {
-                            request.setRemoteUser("testUser");
-                            return request;
-                        })
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("your_meter_reading_dto_as_json_string"))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                        .content("{\"numberMeter\":\"123456789\",\"detailsList\":" +
+                                "[{\"meterType\":\"Electricity\",\"reading\":100},{\"meterType\":\"Gas\",\"reading\":200}]}"))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    @DisplayName("Get meter reading history")
+    @WithMockUser(username = "test", password = "test", roles = "USER")
+    @DisplayName("getMeterReadingHistory returns a list of meter reading history for the authenticated user when successful")
     public void testGetMeterReadingHistory() throws Exception {
-        Mockito.when(userService.getUserByLogin("testUser")).thenReturn(new UserDto());
-        Mockito.when(userMapper.userDtoToUser(any(UserDto.class))).thenReturn(new User());
-        Mockito.when(meterService.getReadingsHistory(any(User.class))).thenReturn(Arrays.asList(new MeterReadingDto()));
+        when(meterService.getReadingsHistory(any(User.class))).thenReturn(meterReadingDtoList);
 
-        mockMvc.perform(get("/meter-readings/history")
-                        .with(request -> {
-                            request.setRemoteUser("testUser");
-                            return request;
-                        })
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        mockMvc.perform(get("/meter-readings/history"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("Get meter reading by month")
+    @WithMockUser(username = "test", password = "test", roles = "USER")
+    @DisplayName("testGetMeterReadingByMonth returns a list of meter reading by month for the authenticated user when successful")
     public void testGetMeterReadingByMonth() throws Exception {
-        Mockito.when(userService.getUserByLogin("testUser")).thenReturn(new UserDto());
-        Mockito.when(userMapper.userDtoToUser(any(UserDto.class))).thenReturn(new User());
-        Mockito.when(meterService.getReadingsByMonth(any(User.class), anyInt())).thenReturn(Arrays.asList(new MeterReadingDto()));
+        Mockito.when(meterService.getReadingsByMonth(any(User.class), anyInt())).thenReturn(meterReadingDtoList);
 
         mockMvc.perform(get("/meter-readings/month/3")
-                        .with(request -> {
-                            request.setRemoteUser("testUser");
-                            return request;
-                        })
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     @Test
-    @DisplayName("Get all meter reading history")
+    @WithMockUser(username = "test", password = "test", roles = "ADMIN")
+    @DisplayName("getMeterReadingHistory returns a list of meter reading all history for the authenticated user when successful")
     public void testGetMeterReadingAllHistory() throws Exception {
-        Mockito.when(userService.getUserByLogin("testUser")).thenReturn(new UserDto());
-        Mockito.when(userMapper.userDtoToUser(any(UserDto.class))).thenReturn(new User());
-        Mockito.when(meterService.getAllReadingsHistory(any(User.class))).thenReturn(Arrays.asList(new MeterReadingDto()));
+        Mockito.when(meterService.getAllReadingsHistory(any(User.class))).thenReturn(meterReadingDtoList);
 
         mockMvc.perform(get("/meter-readings/history/all")
-                        .with(request -> {
-                            request.setRemoteUser("testUser");
-                            return request;
-                        })
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 }
+
 

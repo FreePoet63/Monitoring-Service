@@ -1,21 +1,24 @@
 package com.ylab.app.test.service;
 
-import com.ylab.app.dbService.dao.impl.MeterReadingDaoImpl;
+import com.ylab.app.dbService.dao.MeterReadingDao;
 import com.ylab.app.exception.meterException.MeterReadingException;
 import com.ylab.app.exception.userException.UserValidationException;
+import com.ylab.app.in.StartApplication;
 import com.ylab.app.model.MeterReading;
 import com.ylab.app.model.User;
 import com.ylab.app.model.UserRole;
 import com.ylab.app.model.dto.MeterReadingDetailsDto;
 import com.ylab.app.model.dto.MeterReadingDto;
-import com.ylab.app.service.impl.MeterServiceImpl;
-import com.ylab.app.service.impl.UserServiceImpl;
+import com.ylab.app.service.MeterService;
+import com.ylab.app.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -31,18 +34,20 @@ import static org.mockito.Mockito.*;
  * @author razlivinsky
  * @since 27.01.2024
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = StartApplication.class)
 public class MeterServiceTest {
-    @InjectMocks
-    private MeterServiceImpl meterService;
+    @Autowired
+    private MeterService meterService;
 
-    @Mock
-    private UserServiceImpl userService;
+    @MockBean
+    private UserService userService;
 
-    @Mock
-    private MeterReadingDaoImpl meterReadingDao;
+    @MockBean
+    private MeterReadingDao meterReadingDao;
 
-    @Mock
+    @MockBean
     private User user;
 
     @Test
