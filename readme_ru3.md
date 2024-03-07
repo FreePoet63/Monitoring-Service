@@ -8,7 +8,6 @@
 Audit логгирует все методы Servlets и Services.
 
 Endpoints:
-
 User:
 
 POST http://lovalhost::8080/users/register
@@ -26,8 +25,11 @@ GET  http://lovalhost::8080/users/{id}
 GET  http://lovalhost::8080/users
 
 Meter readings:
+
 Только для авторизированных пользователей, для отправки запросов нужеа авторизация
+
 POST: http://lovalhost::8080/meter
+
       {    
           "number_meter": "number_meter",
           "datalist": [
@@ -37,8 +39,13 @@ POST: http://lovalhost::8080/meter
                            }
                       ]
       }
+      
 GET   http://lovalhost::8080/meter?action=current
+
 GET   http://lovalhost::8080/meter?action=month&month{number}
+
 GET   http://lovalhost::8080/meter?action=hystory
+
 GET   http://lovalhost::8080/meter?action=all
+
 Проект покрыт тестами на 76 ппоцентов
