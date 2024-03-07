@@ -11,24 +11,24 @@ Endpoints:
 
 User:
 
-POST http://lovalhost::8080/users/register
+POST http://localhost::8080/users/register
 
      {
          "name": "name",
          "password": "password"
       }
       
-GET  http://lovalhost::8080/users/login? name={name}&password={password}
+GET  http://localhost::8080/users/login? name={name}&password={password}
 
-GET  http://lovalhost::8080/users/{id}
+GET  http://localhost::8080/users/{id}
 
-GET  http://lovalhost::8080/users
+GET http://localhost::8080/users
 
 Meter readings:
 
 Только для авторизированных пользователей, для отправки запросов нужеа авторизация
 
-POST: http://lovalhost::8080/meter
+POST: http://localhost::8080/meter
 
       {    
           "number_meter": "number_meter",
@@ -40,12 +40,12 @@ POST: http://lovalhost::8080/meter
             ]
       }
       
-GET   http://lovalhost::8080/meter?action=current
+GET   http://localhost::8080/meter?action=current
 
-GET   http://lovalhost::8080/meter?action=month&month{number}
+GET   http://localhost::8080/meter?action=month&month{number}
 
-GET   http://lovalhost::8080/meter?action=hystory
+GET   http://localhost::8080/meter?action=hystory
 
-GET   http://lovalhost::8080/meter?action=all
+GET   http://localhost::8080/meter?action=all
 
 Проект покрыт тестами на 76 ппоцентов
